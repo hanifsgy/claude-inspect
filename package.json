@@ -1,0 +1,17 @@
+{
+  "name": "simulator-inspector",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "iOS Simulator view inspector for Claude Code",
+  "scripts": {
+    "start": "node src/server.js",
+    "scan": "node src/scan.js",
+    "build-overlay": "./scripts/build-overlay.sh",
+    "inspector-on": "./scripts/simulator-inspector-on.sh",
+    "inspector-off": "./scripts/simulator-inspector-off.sh"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  }
+}
