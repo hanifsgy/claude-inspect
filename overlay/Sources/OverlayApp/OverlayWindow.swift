@@ -45,17 +45,6 @@ class OverlayWindow: NSWindow {
         startGlobalMouseMonitor()
     }
 
-    // MARK: - Selection Mode
-
-    func setSelectionMode(_ enabled: Bool) {
-        ignoresMouseEvents = !enabled
-
-        if !enabled {
-            overlayView.hoveredComponent = nil
-            tooltipView.isHidden = true
-        }
-    }
-
     // MARK: - Global Mouse Monitor
 
     private func startGlobalMouseMonitor() {

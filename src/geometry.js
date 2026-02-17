@@ -1,4 +1,9 @@
 import { execSync } from "child_process";
+import { existsSync, readFileSync, writeFileSync } from "fs";
+import os from "os";
+import { join } from "path";
+
+const GEOMETRY_CACHE_PATH = join(os.tmpdir(), "_inspector_geometry_cache.json");
 
 /**
  * Detect the simulator content geometry:
@@ -8,18 +13,43 @@ import { execSync } from "child_process";
  * Returns: { contentRect: {x,y,w,h}, scale, windowSize: {w,h} }
  */
 export function detectGeometry(iosScreenW, iosScreenH) {
-  // 1. Get macOS simulator window size
-  const windowSize = getSimulatorWindowSize();
-  if (!windowSize) {
+  // 1. Get simulator window metrics (window size + display scale)
+  const metrics = getSimulatorMetrics();
+  if (!metrics) {
     console.error("[geometry] Could not find simulator window");
     return fallbackGeometry(iosScreenW, iosScreenH);
   }
+  const { windowSize, macScale } = metrics;
 
-  // 2. Get iOS screenshot pixel dimensions
+  // 2. Use cached geometry if the simulator metrics are unchanged.
+  const cached = loadGeometryCache();
+  if (
+    cached &&
+    cached.iosScreenW === iosScreenW &&
+    cached.iosScreenH === iosScreenH &&
+    cached.windowSize?.w === windowSize.w &&
+    cached.windowSize?.h === windowSize.h &&
+    cached.macScale === macScale &&
+    cached.contentRect &&
+    Number.isFinite(cached.contentRect.x) &&
+    Number.isFinite(cached.contentRect.y) &&
+    Number.isFinite(cached.contentRect.w) &&
+    Number.isFinite(cached.contentRect.h) &&
+    cached.contentRect.w > 0 &&
+    cached.contentRect.h > 0 &&
+    Number.isFinite(cached.scale) &&
+    cached.scale > 0
+  ) {
+    console.error("[geometry] Using cached geometry");
+    return {
+      contentRect: cached.contentRect,
+      scale: cached.scale,
+      windowSize,
+    };
+  }
+
+  // 3. Get iOS screenshot pixel dimensions
   const screenshotPixels = getScreenshotPixels();
-
-  // 3. Get macOS display scale
-  const macScale = getMacDisplayScale();
 
   console.error(`[geometry] Window: ${windowSize.w} x ${windowSize.h} macOS pts`);
   console.error(`[geometry] iOS screen: ${iosScreenW} x ${iosScreenH} AXe pts`);
@@ -87,13 +117,25 @@ export function detectGeometry(iosScreenW, iosScreenH) {
     `[geometry] Content rect: (${contentRect.x.toFixed(1)}, ${contentRect.y.toFixed(1)}, ${contentRect.w.toFixed(1)}, ${contentRect.h.toFixed(1)})`
   );
 
-  return { contentRect, scale: renderScale, windowSize };
+  const result = { contentRect, scale: renderScale, windowSize };
+  saveGeometryCache({
+    iosScreenW,
+    iosScreenH,
+    windowSize,
+    macScale,
+    contentRect,
+    scale: renderScale,
+    savedAt: Date.now(),
+  });
+
+  return result;
 }
 
-function getSimulatorWindowSize() {
+function getSimulatorMetrics() {
   try {
     const output = execSync(
       `swift -target arm64-apple-macosx14.0 -e '
+import AppKit
 import CoreGraphics
 let opts: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
 if let list = CGWindowListCopyWindowInfo(opts, kCGNullWindowID) as? [[String: Any]] {
@@ -107,14 +149,17 @@ if let list = CGWindowListCopyWindowInfo(opts, kCGNullWindowID) as? [[String: An
       }
     }
   }
-  if bestArea > 0 { print("\\(bestW)|\\(bestH)") }
+  if bestArea > 0 {
+    let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+    print("\\(bestW)|\\(bestH)|\\(scale)")
+  }
 }'`,
       { encoding: "utf-8", timeout: 10000 }
     ).trim();
 
     if (!output) return null;
-    const [w, h] = output.split("|").map(Number);
-    return { w, h };
+    const [w, h, macScale] = output.split("|").map(Number);
+    return { windowSize: { w, h }, macScale };
   } catch {
     return null;
   }
@@ -140,15 +185,20 @@ function getScreenshotPixels() {
   }
 }
 
-function getMacDisplayScale() {
+function loadGeometryCache() {
   try {
-    const output = execSync(
-      `swift -target arm64-apple-macosx14.0 -e 'import AppKit; print(NSScreen.main?.backingScaleFactor ?? 2.0)'`,
-      { encoding: "utf-8", timeout: 5000 }
-    ).trim();
-    return parseFloat(output) || 2.0;
+    if (!existsSync(GEOMETRY_CACHE_PATH)) return null;
+    return JSON.parse(readFileSync(GEOMETRY_CACHE_PATH, "utf-8"));
   } catch {
-    return 2.0;
+    return null;
+  }
+}
+
+function saveGeometryCache(cache) {
+  try {
+    writeFileSync(GEOMETRY_CACHE_PATH, JSON.stringify(cache));
+  } catch {
+    // best-effort cache only
   }
 }
 

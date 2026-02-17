@@ -72,14 +72,16 @@ console.error(`[scan] Applied vertical offset: +${verticalOffset}px`);
 console.error(`[scan] Render scale: ${geometry.scale.toFixed(4)}`);
 
 // Step 6: Output overlay-ready format with screen info + contentRect + enriched components
-const components = enriched.map((node) => ({
-  id: node.id,
-  className: node.className,
-  name: node.name,
-  frame: node.frame,
-  file: node.file || null,
-  fileLine: node.fileLine || null,
-}));
+const components = enriched
+  .filter((node) => node.className !== "UIApplication")
+  .map((node) => ({
+    id: node.id,
+    className: node.className,
+    name: node.name,
+    frame: node.frame,
+    file: node.file || null,
+    fileLine: node.fileLine || null,
+  }));
 
 const output = {
   screen,

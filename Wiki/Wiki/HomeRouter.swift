@@ -24,11 +24,27 @@ final class HomeRouter: HomeRoutingLogic {
     }
 
     func routeToBottomDestination(_ destination: Home.Destination) {
-        announce(message: "Selected \(destination.rawValue.capitalized)")
+        switch destination {
+        case .commands:
+            routeToCommands()
+        case .chats:
+            announce(message: "Already on Chats")
+        case .analytics, .profile:
+            announce(message: "Selected \(destination.rawValue.capitalized)")
+        }
     }
 }
 
 private extension HomeRouter {
+    func routeToCommands() {
+        guard let viewController else { return }
+        guard !(viewController.presentedViewController is CommandViewController) else { return }
+
+        let commandViewController = CommandViewController()
+        commandViewController.modalPresentationStyle = .fullScreen
+        viewController.present(commandViewController, animated: true)
+    }
+
     func announce(message: String) {
         guard let viewController else { return }
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)

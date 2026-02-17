@@ -20,79 +20,19 @@
       "enabled": true,
       "children": [
         {
-          "className": "UIView",
-          "axeType": "GenericElement",
-          "role": "AXGenericElement",
-          "roleDescription": "",
-          "identifier": "home.header.logo",
-          "label": "Terminal logo",
-          "name": "home.header.logo",
-          "id": "home.header.logo",
-          "frame": {
-            "x": 16,
-            "y": 78,
-            "w": 32,
-            "h": 32
-          },
-          "value": null,
-          "help": null,
-          "enabled": true,
-          "children": []
-        },
-        {
           "className": "UILabel",
           "axeType": "Heading",
           "role": "AXHeading",
           "roleDescription": "heading",
-          "identifier": "home.header.title",
-          "label": "Terminal",
-          "name": "home.header.title",
-          "id": "home.header.title",
+          "identifier": "command.header.title",
+          "label": "Command Center",
+          "name": "command.header.title",
+          "id": "command.header.title",
           "frame": {
-            "x": 58,
-            "y": 81,
-            "w": 88.33,
-            "h": 26.33
-          },
-          "value": null,
-          "help": null,
-          "enabled": true,
-          "children": []
-        },
-        {
-          "className": "UIButton",
-          "axeType": "Button",
-          "role": "AXButton",
-          "roleDescription": "button",
-          "identifier": "home.header.notification",
-          "label": "Notifications",
-          "name": "home.header.notification",
-          "id": "home.header.notification",
-          "frame": {
-            "x": 304,
-            "y": 76,
-            "w": 36,
-            "h": 36
-          },
-          "value": null,
-          "help": "Opens latest alerts",
-          "enabled": true,
-          "children": []
-        },
-        {
-          "className": "UIImageView",
-          "axeType": "Image",
-          "role": "AXImage",
-          "roleDescription": "image",
-          "identifier": "home.header.profile",
-          "label": "Profile",
-          "name": "home.header.profile",
-          "id": "home.header.profile",
-          "frame": {
-            "x": 350,
-            "y": 76.67,
-            "w": 36,
-            "h": 34.67
+            "x": 20,
+            "y": 78,
+            "w": 362,
+            "h": 28.67
           },
           "value": null,
           "help": null,
@@ -104,74 +44,34 @@
           "axeType": "TextField",
           "role": "AXTextField",
           "roleDescription": "text field",
-          "identifier": "home.search.field",
+          "identifier": "command.search.field",
+          "label": "Command search",
+          "name": "command.search.field",
+          "id": "command.search.field",
+          "frame": {
+            "x": 54,
+            "y": 120.67,
+            "w": 318,
+            "h": 44
+          },
+          "value": "Search commands (e.g. /chart)...",
+          "help": "Search command presets",
+          "enabled": true,
+          "children": []
+        },
+        {
+          "className": "UIImageView",
+          "axeType": "Image",
+          "role": "AXImage",
+          "roleDescription": "image",
+          "identifier": "command.search.icon",
           "label": "Search",
-          "name": "home.search.field",
-          "id": "home.search.field",
+          "name": "command.search.icon",
+          "id": "command.search.icon",
           "frame": {
-            "x": 52,
-            "y": 142,
-            "w": 264,
-            "h": 50
-          },
-          "value": "Search commands, charts, or messages...",
-          "help": "Search commands, charts, or messages",
-          "enabled": true,
-          "children": []
-        },
-        {
-          "className": "UILabel",
-          "axeType": "StaticText",
-          "role": "AXStaticText",
-          "roleDescription": "text",
-          "identifier": "home.search.shortcut.cmd",
-          "label": "Keyboard shortcut CMD",
-          "name": "home.search.shortcut.cmd",
-          "id": "home.search.shortcut.cmd",
-          "frame": {
-            "x": 324,
-            "y": 159,
-            "w": 24,
-            "h": 16
-          },
-          "value": null,
-          "help": null,
-          "enabled": true,
-          "children": []
-        },
-        {
-          "className": "UILabel",
-          "axeType": "StaticText",
-          "role": "AXStaticText",
-          "roleDescription": "text",
-          "identifier": "home.search.shortcut.k",
-          "label": "Keyboard shortcut K",
-          "name": "home.search.shortcut.k",
-          "id": "home.search.shortcut.k",
-          "frame": {
-            "x": 352,
-            "y": 159,
-            "w": 24,
-            "h": 16
-          },
-          "value": null,
-          "help": null,
-          "enabled": true,
-          "children": []
-        },
-        {
-          "className": "UILabel",
-          "axeType": "Heading",
-          "role": "AXHeading",
-          "roleDescription": "heading",
-          "identifier": "",
-          "label": "RECENT OUTPUTS",
-          "name": "RECENT OUTPUTS",
-          "id": "UILabel_RECENT OUTPUTS",
-          "frame": {
-            "x": 16,
-            "y": 214.33,
-            "w": 311,
+            "x": 30,
+            "y": 135.67,
+            "w": 16,
             "h": 14.33
           },
           "value": null,
@@ -184,35 +84,15 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.recent.viewAll",
-          "label": "View All >",
-          "name": "home.recent.viewAll",
-          "id": "home.recent.viewAll",
+          "identifier": "command.filter.all",
+          "label": "ALL COMMANDS",
+          "name": "command.filter.all",
+          "id": "command.filter.all",
           "frame": {
-            "x": 327,
-            "y": 208,
-            "w": 59,
-            "h": 27
-          },
-          "value": null,
-          "help": "Shows all recent outputs",
-          "enabled": true,
-          "children": []
-        },
-        {
-          "className": "UIButton",
-          "axeType": "Button",
-          "role": "AXButton",
-          "roleDescription": "button",
-          "identifier": "home.recent.card",
-          "label": "Q3 Revenue Projection, CHART, Generated 2m ago",
-          "name": "home.recent.card",
-          "id": "home.recent.card",
-          "frame": {
-            "x": 16,
-            "y": 251,
-            "w": 256,
-            "h": 172
+            "x": 20,
+            "y": 176.67,
+            "w": 113.67,
+            "h": 30
           },
           "value": null,
           "help": null,
@@ -224,15 +104,15 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.recent.card",
-          "label": "Marketing Strategy 2025, PDF, Generated 1h ago",
-          "name": "home.recent.card",
-          "id": "home.recent.card",
+          "identifier": "command.filter.visualization",
+          "label": "VISUALIZATION",
+          "name": "command.filter.visualization",
+          "id": "command.filter.visualization",
           "frame": {
-            "x": 284,
-            "y": 251,
-            "w": 256,
-            "h": 172
+            "x": 141.67,
+            "y": 176.67,
+            "w": 113.67,
+            "h": 30
           },
           "value": null,
           "help": null,
@@ -244,15 +124,35 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.recent.card",
-          "label": "Investor Update Deck, DECK, Generated 4h ago",
-          "name": "home.recent.card",
-          "id": "home.recent.card",
+          "identifier": "command.filter.documents",
+          "label": "DOCUMENTS",
+          "name": "command.filter.documents",
+          "id": "command.filter.documents",
           "frame": {
-            "x": 552,
-            "y": 251,
-            "w": 256,
-            "h": 172
+            "x": 263.33,
+            "y": 176.67,
+            "w": 113.67,
+            "h": 30
+          },
+          "value": null,
+          "help": null,
+          "enabled": true,
+          "children": []
+        },
+        {
+          "className": "UIButton",
+          "axeType": "Button",
+          "role": "AXButton",
+          "roleDescription": "button",
+          "identifier": "command.filter.analysis",
+          "label": "ANALYSIS",
+          "name": "command.filter.analysis",
+          "id": "command.filter.analysis",
+          "frame": {
+            "x": 385,
+            "y": 176.67,
+            "w": 113.67,
+            "h": 30
           },
           "value": null,
           "help": null,
@@ -261,18 +161,18 @@
         },
         {
           "className": "UILabel",
-          "axeType": "Heading",
-          "role": "AXHeading",
-          "roleDescription": "heading",
-          "identifier": "",
-          "label": "ACTIVE THREADS",
-          "name": "ACTIVE THREADS",
-          "id": "UILabel_ACTIVE THREADS",
+          "axeType": "StaticText",
+          "role": "AXStaticText",
+          "roleDescription": "text",
+          "identifier": "command.library.title",
+          "label": "SYSTEM LIBRARY",
+          "name": "command.library.title",
+          "id": "command.library.title",
           "frame": {
-            "x": 16,
-            "y": 439,
-            "w": 370,
-            "h": 14.33
+            "x": 20,
+            "y": 240.67,
+            "w": 362,
+            "h": 13.33
           },
           "value": null,
           "help": null,
@@ -284,15 +184,15 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.thread.row",
-          "label": "Sarah Chen, Can you run the analysis on the new dataset?, 10:42 AM",
-          "name": "home.thread.row",
-          "id": "home.thread.row",
+          "identifier": "command.library.card.0",
+          "label": "/generate-chart. Transforms raw database queries into interactive visualizations (Line, Bar, Pie, Scatter).",
+          "name": "command.library.card.0",
+          "id": "command.library.card.0",
           "frame": {
-            "x": 16,
-            "y": 469.33,
-            "w": 370,
-            "h": 74
+            "x": 20,
+            "y": 266,
+            "w": 362,
+            "h": 94.67
           },
           "value": null,
           "help": null,
@@ -304,15 +204,15 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.thread.row",
-          "label": "Data Bot, Chart generated successfully., 09:15 AM",
-          "name": "home.thread.row",
-          "id": "home.thread.row",
+          "identifier": "command.library.card.1",
+          "label": "/summarize-pdf. Extract key insights and data points from uploaded PDF documents into a concise brief.",
+          "name": "command.library.card.1",
+          "id": "command.library.card.1",
           "frame": {
-            "x": 16,
-            "y": 544.33,
-            "w": 370,
-            "h": 74
+            "x": 20,
+            "y": 372.67,
+            "w": 362,
+            "h": 94.67
           },
           "value": null,
           "help": null,
@@ -324,15 +224,35 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.thread.row",
-          "label": "Marcus Johnson, I've attached the Q2 report for review., Yesterday",
-          "name": "home.thread.row",
-          "id": "home.thread.row",
+          "identifier": "command.library.card.2",
+          "label": "/create-deck. Generates a multi-slide presentation deck based on chat context or provided datasets.",
+          "name": "command.library.card.2",
+          "id": "command.library.card.2",
           "frame": {
-            "x": 16,
+            "x": 20,
+            "y": 479.33,
+            "w": 362,
+            "h": 94.67
+          },
+          "value": null,
+          "help": null,
+          "enabled": true,
+          "children": []
+        },
+        {
+          "className": "UILabel",
+          "axeType": "StaticText",
+          "role": "AXStaticText",
+          "roleDescription": "text",
+          "identifier": "command.execution.title",
+          "label": "EXECUTION LOG",
+          "name": "command.execution.title",
+          "id": "command.execution.title",
+          "frame": {
+            "x": 20,
             "y": 619.33,
-            "w": 370,
-            "h": 74
+            "w": 305,
+            "h": 13.33
           },
           "value": null,
           "help": null,
@@ -344,15 +264,35 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.thread.row",
-          "label": "Elena Rodriguez, Thanks for the update!, Yesterday",
-          "name": "home.thread.row",
-          "id": "home.thread.row",
+          "identifier": "command.execution.clearAll",
+          "label": "CLEAR ALL",
+          "name": "command.execution.clearAll",
+          "id": "command.execution.clearAll",
           "frame": {
-            "x": 16,
-            "y": 694.33,
-            "w": 370,
-            "h": 74
+            "x": 325,
+            "y": 614,
+            "w": 57,
+            "h": 24
+          },
+          "value": null,
+          "help": "Clears all execution entries",
+          "enabled": true,
+          "children": []
+        },
+        {
+          "className": "UIButton",
+          "axeType": "Button",
+          "role": "AXButton",
+          "roleDescription": "button",
+          "identifier": "command.execution.item.0",
+          "label": "14:02:45, Success, Q3_Revenue_Comparison.png",
+          "name": "command.execution.item.0",
+          "id": "command.execution.item.0",
+          "frame": {
+            "x": 20,
+            "y": 650,
+            "w": 362,
+            "h": 88
           },
           "value": null,
           "help": null,
@@ -364,18 +304,18 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.create",
-          "label": "Create new",
-          "name": "home.create",
-          "id": "home.create",
+          "identifier": "command.execution.item.1",
+          "label": "09:15:20, Success, Project_Alpha_Summary.pdf",
+          "name": "command.execution.item.1",
+          "id": "command.execution.item.1",
           "frame": {
-            "x": 328,
-            "y": 716,
-            "w": 56,
-            "h": 56
+            "x": 20,
+            "y": 750,
+            "w": 362,
+            "h": 84.33
           },
           "value": null,
-          "help": "Starts a new chat or command",
+          "help": null,
           "enabled": true,
           "children": []
         },
@@ -384,10 +324,10 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.bottom.chats",
+          "identifier": "command.bottom.chats",
           "label": "Chats",
-          "name": "home.bottom.chats",
-          "id": "home.bottom.chats",
+          "name": "command.bottom.chats",
+          "id": "command.bottom.chats",
           "frame": {
             "x": 0,
             "y": 786,
@@ -404,10 +344,10 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.bottom.commands",
+          "identifier": "command.bottom.commands",
           "label": "Commands",
-          "name": "home.bottom.commands",
-          "id": "home.bottom.commands",
+          "name": "command.bottom.commands",
+          "id": "command.bottom.commands",
           "frame": {
             "x": 100.67,
             "y": 786,
@@ -424,10 +364,10 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.bottom.analytics",
+          "identifier": "command.bottom.analytics",
           "label": "Analytics",
-          "name": "home.bottom.analytics",
-          "id": "home.bottom.analytics",
+          "name": "command.bottom.analytics",
+          "id": "command.bottom.analytics",
           "frame": {
             "x": 201,
             "y": 786,
@@ -444,10 +384,10 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "home.bottom.profile",
+          "identifier": "command.bottom.profile",
           "label": "Profile",
-          "name": "home.bottom.profile",
-          "id": "home.bottom.profile",
+          "name": "command.bottom.profile",
+          "id": "command.bottom.profile",
           "frame": {
             "x": 301.67,
             "y": 786,
@@ -490,126 +430,625 @@
       "mapped": false
     },
     {
-      "className": "UIView",
-      "axeType": "GenericElement",
-      "role": "AXGenericElement",
-      "roleDescription": "",
-      "identifier": "home.header.logo",
-      "label": "Terminal logo",
-      "name": "home.header.logo",
-      "id": "home.header.logo",
-      "frame": {
-        "x": 16,
-        "y": 78,
-        "w": 32,
-        "h": 32
-      },
-      "value": null,
-      "help": null,
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
       "className": "UILabel",
       "axeType": "Heading",
       "role": "AXHeading",
       "roleDescription": "heading",
-      "identifier": "home.header.title",
-      "label": "Terminal",
-      "name": "home.header.title",
-      "id": "home.header.title",
+      "identifier": "command.header.title",
+      "label": "Command Center",
+      "name": "command.header.title",
+      "id": "command.header.title",
       "frame": {
-        "x": 58,
-        "y": 81,
-        "w": 88.33,
-        "h": 26.33
+        "x": 20,
+        "y": 78,
+        "w": 362,
+        "h": 28.67
       },
       "value": null,
       "help": null,
       "enabled": true,
       "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
+      "file": "Wiki/CommandView.swift",
+      "fileLine": 250,
       "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UIButton",
-      "axeType": "Button",
-      "role": "AXButton",
-      "roleDescription": "button",
-      "identifier": "home.header.notification",
-      "label": "Notifications",
-      "name": "home.header.notification",
-      "id": "home.header.notification",
-      "frame": {
-        "x": 304,
-        "y": 76,
-        "w": 36,
-        "h": 36
+      "dependencies": {
+        "imports": [
+          "UIKit"
+        ],
+        "injected": [
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          }
+        ],
+        "environment": [],
+        "conformances": []
       },
-      "value": null,
-      "help": "Opens latest alerts",
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UIImageView",
-      "axeType": "Image",
-      "role": "AXImage",
-      "roleDescription": "image",
-      "identifier": "home.header.profile",
-      "label": "Profile",
-      "name": "home.header.profile",
-      "id": "home.header.profile",
-      "frame": {
-        "x": 350,
-        "y": 76.67,
-        "w": 36,
-        "h": 34.67
+      "hierarchy": {
+        "subviews": [
+          {
+            "name": "headerView",
+            "line": 59
+          },
+          {
+            "name": "titleLabel",
+            "line": 60
+          },
+          {
+            "name": "searchContainerView",
+            "line": 61
+          },
+          {
+            "name": "searchIconView",
+            "line": 62
+          },
+          {
+            "name": "searchTextField",
+            "line": 63
+          },
+          {
+            "name": "filtersScrollView",
+            "line": 64
+          },
+          {
+            "name": "filtersStack",
+            "line": 65
+          },
+          {
+            "name": "scrollView",
+            "line": 67
+          },
+          {
+            "name": "scrollContentView",
+            "line": 68
+          },
+          {
+            "name": "librarySectionView",
+            "line": 70
+          },
+          {
+            "name": "libraryTitleLabel",
+            "line": 71
+          },
+          {
+            "name": "libraryCardsStack",
+            "line": 72
+          },
+          {
+            "name": "executionSectionView",
+            "line": 74
+          },
+          {
+            "name": "executionHeaderStack",
+            "line": 75
+          },
+          {
+            "name": "executionItemsStack",
+            "line": 78
+          },
+          {
+            "name": "bottomNavView",
+            "line": 80
+          },
+          {
+            "name": "rowStack",
+            "line": 394
+          },
+          {
+            "name": "iconImageView",
+            "line": 396
+          },
+          {
+            "name": "descriptionLabel",
+            "line": 400
+          },
+          {
+            "name": "timelineColumn",
+            "line": 538
+          },
+          {
+            "name": "timelineDot",
+            "line": 539
+          },
+          {
+            "name": "timelineLine",
+            "line": 540
+          },
+          {
+            "name": "bodyStack",
+            "line": 542
+          },
+          {
+            "name": "cardHeaderStack",
+            "line": 549
+          },
+          {
+            "name": "metadataLabel",
+            "line": 553
+          },
+          {
+            "name": "stack",
+            "line": 689
+          }
+        ],
+        "outlets": [],
+        "bodyComponents": []
       },
-      "value": null,
-      "help": null,
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
+      "mapped": true
     },
     {
       "className": "UITextField",
       "axeType": "TextField",
       "role": "AXTextField",
       "roleDescription": "text field",
-      "identifier": "home.search.field",
+      "identifier": "command.search.field",
+      "label": "Command search",
+      "name": "command.search.field",
+      "id": "command.search.field",
+      "frame": {
+        "x": 54,
+        "y": 120.67,
+        "w": 318,
+        "h": 44
+      },
+      "value": "Search commands (e.g. /chart)...",
+      "help": "Search command presets",
+      "enabled": true,
+      "parentId": "UIApplication_Wiki",
+      "file": "Wiki/CommandView.swift",
+      "fileLine": 257,
+      "parentClass": null,
+      "dependencies": {
+        "imports": [
+          "UIKit"
+        ],
+        "injected": [
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          }
+        ],
+        "environment": [],
+        "conformances": []
+      },
+      "hierarchy": {
+        "subviews": [
+          {
+            "name": "headerView",
+            "line": 59
+          },
+          {
+            "name": "titleLabel",
+            "line": 60
+          },
+          {
+            "name": "searchContainerView",
+            "line": 61
+          },
+          {
+            "name": "searchIconView",
+            "line": 62
+          },
+          {
+            "name": "searchTextField",
+            "line": 63
+          },
+          {
+            "name": "filtersScrollView",
+            "line": 64
+          },
+          {
+            "name": "filtersStack",
+            "line": 65
+          },
+          {
+            "name": "scrollView",
+            "line": 67
+          },
+          {
+            "name": "scrollContentView",
+            "line": 68
+          },
+          {
+            "name": "librarySectionView",
+            "line": 70
+          },
+          {
+            "name": "libraryTitleLabel",
+            "line": 71
+          },
+          {
+            "name": "libraryCardsStack",
+            "line": 72
+          },
+          {
+            "name": "executionSectionView",
+            "line": 74
+          },
+          {
+            "name": "executionHeaderStack",
+            "line": 75
+          },
+          {
+            "name": "executionItemsStack",
+            "line": 78
+          },
+          {
+            "name": "bottomNavView",
+            "line": 80
+          },
+          {
+            "name": "rowStack",
+            "line": 394
+          },
+          {
+            "name": "iconImageView",
+            "line": 396
+          },
+          {
+            "name": "descriptionLabel",
+            "line": 400
+          },
+          {
+            "name": "timelineColumn",
+            "line": 538
+          },
+          {
+            "name": "timelineDot",
+            "line": 539
+          },
+          {
+            "name": "timelineLine",
+            "line": 540
+          },
+          {
+            "name": "bodyStack",
+            "line": 542
+          },
+          {
+            "name": "cardHeaderStack",
+            "line": 549
+          },
+          {
+            "name": "metadataLabel",
+            "line": 553
+          },
+          {
+            "name": "stack",
+            "line": 689
+          }
+        ],
+        "outlets": [],
+        "bodyComponents": []
+      },
+      "mapped": true
+    },
+    {
+      "className": "UIImageView",
+      "axeType": "Image",
+      "role": "AXImage",
+      "roleDescription": "image",
+      "identifier": "command.search.icon",
       "label": "Search",
-      "name": "home.search.field",
-      "id": "home.search.field",
+      "name": "command.search.icon",
+      "id": "command.search.icon",
       "frame": {
-        "x": 52,
-        "y": 142,
-        "w": 264,
-        "h": 50
+        "x": 30,
+        "y": 135.67,
+        "w": 16,
+        "h": 14.33
       },
-      "value": "Search commands, charts, or messages...",
-      "help": "Search commands, charts, or messages",
+      "value": null,
+      "help": null,
+      "enabled": true,
+      "parentId": "UIApplication_Wiki",
+      "file": "Wiki/CommandView.swift",
+      "fileLine": 255,
+      "parentClass": null,
+      "dependencies": {
+        "imports": [
+          "UIKit"
+        ],
+        "injected": [
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          }
+        ],
+        "environment": [],
+        "conformances": []
+      },
+      "hierarchy": {
+        "subviews": [
+          {
+            "name": "headerView",
+            "line": 59
+          },
+          {
+            "name": "titleLabel",
+            "line": 60
+          },
+          {
+            "name": "searchContainerView",
+            "line": 61
+          },
+          {
+            "name": "searchIconView",
+            "line": 62
+          },
+          {
+            "name": "searchTextField",
+            "line": 63
+          },
+          {
+            "name": "filtersScrollView",
+            "line": 64
+          },
+          {
+            "name": "filtersStack",
+            "line": 65
+          },
+          {
+            "name": "scrollView",
+            "line": 67
+          },
+          {
+            "name": "scrollContentView",
+            "line": 68
+          },
+          {
+            "name": "librarySectionView",
+            "line": 70
+          },
+          {
+            "name": "libraryTitleLabel",
+            "line": 71
+          },
+          {
+            "name": "libraryCardsStack",
+            "line": 72
+          },
+          {
+            "name": "executionSectionView",
+            "line": 74
+          },
+          {
+            "name": "executionHeaderStack",
+            "line": 75
+          },
+          {
+            "name": "executionItemsStack",
+            "line": 78
+          },
+          {
+            "name": "bottomNavView",
+            "line": 80
+          },
+          {
+            "name": "rowStack",
+            "line": 394
+          },
+          {
+            "name": "iconImageView",
+            "line": 396
+          },
+          {
+            "name": "descriptionLabel",
+            "line": 400
+          },
+          {
+            "name": "timelineColumn",
+            "line": 538
+          },
+          {
+            "name": "timelineDot",
+            "line": 539
+          },
+          {
+            "name": "timelineLine",
+            "line": 540
+          },
+          {
+            "name": "bodyStack",
+            "line": 542
+          },
+          {
+            "name": "cardHeaderStack",
+            "line": 549
+          },
+          {
+            "name": "metadataLabel",
+            "line": 553
+          },
+          {
+            "name": "stack",
+            "line": 689
+          }
+        ],
+        "outlets": [],
+        "bodyComponents": []
+      },
+      "mapped": true
+    },
+    {
+      "className": "UIButton",
+      "axeType": "Button",
+      "role": "AXButton",
+      "roleDescription": "button",
+      "identifier": "command.filter.all",
+      "label": "ALL COMMANDS",
+      "name": "command.filter.all",
+      "id": "command.filter.all",
+      "frame": {
+        "x": 20,
+        "y": 176.67,
+        "w": 113.67,
+        "h": 30
+      },
+      "value": null,
+      "help": null,
+      "enabled": true,
+      "parentId": "UIApplication_Wiki",
+      "file": null,
+      "fileLine": null,
+      "parentClass": null,
+      "dependencies": [],
+      "hierarchy": null,
+      "mapped": false
+    },
+    {
+      "className": "UIButton",
+      "axeType": "Button",
+      "role": "AXButton",
+      "roleDescription": "button",
+      "identifier": "command.filter.visualization",
+      "label": "VISUALIZATION",
+      "name": "command.filter.visualization",
+      "id": "command.filter.visualization",
+      "frame": {
+        "x": 141.67,
+        "y": 176.67,
+        "w": 113.67,
+        "h": 30
+      },
+      "value": null,
+      "help": null,
+      "enabled": true,
+      "parentId": "UIApplication_Wiki",
+      "file": null,
+      "fileLine": null,
+      "parentClass": null,
+      "dependencies": [],
+      "hierarchy": null,
+      "mapped": false
+    },
+    {
+      "className": "UIButton",
+      "axeType": "Button",
+      "role": "AXButton",
+      "roleDescription": "button",
+      "identifier": "command.filter.documents",
+      "label": "DOCUMENTS",
+      "name": "command.filter.documents",
+      "id": "command.filter.documents",
+      "frame": {
+        "x": 263.33,
+        "y": 176.67,
+        "w": 113.67,
+        "h": 30
+      },
+      "value": null,
+      "help": null,
+      "enabled": true,
+      "parentId": "UIApplication_Wiki",
+      "file": null,
+      "fileLine": null,
+      "parentClass": null,
+      "dependencies": [],
+      "hierarchy": null,
+      "mapped": false
+    },
+    {
+      "className": "UIButton",
+      "axeType": "Button",
+      "role": "AXButton",
+      "roleDescription": "button",
+      "identifier": "command.filter.analysis",
+      "label": "ANALYSIS",
+      "name": "command.filter.analysis",
+      "id": "command.filter.analysis",
+      "frame": {
+        "x": 385,
+        "y": 176.67,
+        "w": 113.67,
+        "h": 30
+      },
+      "value": null,
+      "help": null,
       "enabled": true,
       "parentId": "UIApplication_Wiki",
       "file": null,
@@ -624,15 +1063,242 @@
       "axeType": "StaticText",
       "role": "AXStaticText",
       "roleDescription": "text",
-      "identifier": "home.search.shortcut.cmd",
-      "label": "Keyboard shortcut CMD",
-      "name": "home.search.shortcut.cmd",
-      "id": "home.search.shortcut.cmd",
+      "identifier": "command.library.title",
+      "label": "SYSTEM LIBRARY",
+      "name": "command.library.title",
+      "id": "command.library.title",
       "frame": {
-        "x": 324,
-        "y": 159,
-        "w": 24,
-        "h": 16
+        "x": 20,
+        "y": 240.67,
+        "w": 362,
+        "h": 13.33
+      },
+      "value": null,
+      "help": null,
+      "enabled": true,
+      "parentId": "UIApplication_Wiki",
+      "file": "Wiki/CommandView.swift",
+      "fileLine": 266,
+      "parentClass": null,
+      "dependencies": {
+        "imports": [
+          "UIKit"
+        ],
+        "injected": [
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          }
+        ],
+        "environment": [],
+        "conformances": []
+      },
+      "hierarchy": {
+        "subviews": [
+          {
+            "name": "headerView",
+            "line": 59
+          },
+          {
+            "name": "titleLabel",
+            "line": 60
+          },
+          {
+            "name": "searchContainerView",
+            "line": 61
+          },
+          {
+            "name": "searchIconView",
+            "line": 62
+          },
+          {
+            "name": "searchTextField",
+            "line": 63
+          },
+          {
+            "name": "filtersScrollView",
+            "line": 64
+          },
+          {
+            "name": "filtersStack",
+            "line": 65
+          },
+          {
+            "name": "scrollView",
+            "line": 67
+          },
+          {
+            "name": "scrollContentView",
+            "line": 68
+          },
+          {
+            "name": "librarySectionView",
+            "line": 70
+          },
+          {
+            "name": "libraryTitleLabel",
+            "line": 71
+          },
+          {
+            "name": "libraryCardsStack",
+            "line": 72
+          },
+          {
+            "name": "executionSectionView",
+            "line": 74
+          },
+          {
+            "name": "executionHeaderStack",
+            "line": 75
+          },
+          {
+            "name": "executionItemsStack",
+            "line": 78
+          },
+          {
+            "name": "bottomNavView",
+            "line": 80
+          },
+          {
+            "name": "rowStack",
+            "line": 394
+          },
+          {
+            "name": "iconImageView",
+            "line": 396
+          },
+          {
+            "name": "descriptionLabel",
+            "line": 400
+          },
+          {
+            "name": "timelineColumn",
+            "line": 538
+          },
+          {
+            "name": "timelineDot",
+            "line": 539
+          },
+          {
+            "name": "timelineLine",
+            "line": 540
+          },
+          {
+            "name": "bodyStack",
+            "line": 542
+          },
+          {
+            "name": "cardHeaderStack",
+            "line": 549
+          },
+          {
+            "name": "metadataLabel",
+            "line": 553
+          },
+          {
+            "name": "stack",
+            "line": 689
+          }
+        ],
+        "outlets": [],
+        "bodyComponents": []
+      },
+      "mapped": true
+    },
+    {
+      "className": "UIButton",
+      "axeType": "Button",
+      "role": "AXButton",
+      "roleDescription": "button",
+      "identifier": "command.library.card.0",
+      "label": "/generate-chart. Transforms raw database queries into interactive visualizations (Line, Bar, Pie, Scatter).",
+      "name": "command.library.card.0",
+      "id": "command.library.card.0",
+      "frame": {
+        "x": 20,
+        "y": 266,
+        "w": 362,
+        "h": 94.67
+      },
+      "value": null,
+      "help": null,
+      "enabled": true,
+      "parentId": "UIApplication_Wiki",
+      "file": null,
+      "fileLine": null,
+      "parentClass": null,
+      "dependencies": [],
+      "hierarchy": null,
+      "mapped": false
+    },
+    {
+      "className": "UIButton",
+      "axeType": "Button",
+      "role": "AXButton",
+      "roleDescription": "button",
+      "identifier": "command.library.card.1",
+      "label": "/summarize-pdf. Extract key insights and data points from uploaded PDF documents into a concise brief.",
+      "name": "command.library.card.1",
+      "id": "command.library.card.1",
+      "frame": {
+        "x": 20,
+        "y": 372.67,
+        "w": 362,
+        "h": 94.67
+      },
+      "value": null,
+      "help": null,
+      "enabled": true,
+      "parentId": "UIApplication_Wiki",
+      "file": null,
+      "fileLine": null,
+      "parentClass": null,
+      "dependencies": [],
+      "hierarchy": null,
+      "mapped": false
+    },
+    {
+      "className": "UIButton",
+      "axeType": "Button",
+      "role": "AXButton",
+      "roleDescription": "button",
+      "identifier": "command.library.card.2",
+      "label": "/create-deck. Generates a multi-slide presentation deck based on chat context or provided datasets.",
+      "name": "command.library.card.2",
+      "id": "command.library.card.2",
+      "frame": {
+        "x": 20,
+        "y": 479.33,
+        "w": 362,
+        "h": 94.67
       },
       "value": null,
       "help": null,
@@ -650,249 +1316,365 @@
       "axeType": "StaticText",
       "role": "AXStaticText",
       "roleDescription": "text",
-      "identifier": "home.search.shortcut.k",
-      "label": "Keyboard shortcut K",
-      "name": "home.search.shortcut.k",
-      "id": "home.search.shortcut.k",
+      "identifier": "command.execution.title",
+      "label": "EXECUTION LOG",
+      "name": "command.execution.title",
+      "id": "command.execution.title",
       "frame": {
-        "x": 352,
-        "y": 159,
-        "w": 24,
-        "h": 16
-      },
-      "value": null,
-      "help": null,
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UILabel",
-      "axeType": "Heading",
-      "role": "AXHeading",
-      "roleDescription": "heading",
-      "identifier": "",
-      "label": "RECENT OUTPUTS",
-      "name": "RECENT OUTPUTS",
-      "id": "UILabel_RECENT OUTPUTS",
-      "frame": {
-        "x": 16,
-        "y": 214.33,
-        "w": 311,
-        "h": 14.33
-      },
-      "value": null,
-      "help": null,
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UIButton",
-      "axeType": "Button",
-      "role": "AXButton",
-      "roleDescription": "button",
-      "identifier": "home.recent.viewAll",
-      "label": "View All >",
-      "name": "home.recent.viewAll",
-      "id": "home.recent.viewAll",
-      "frame": {
-        "x": 327,
-        "y": 208,
-        "w": 59,
-        "h": 27
-      },
-      "value": null,
-      "help": "Shows all recent outputs",
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UIButton",
-      "axeType": "Button",
-      "role": "AXButton",
-      "roleDescription": "button",
-      "identifier": "home.recent.card",
-      "label": "Q3 Revenue Projection, CHART, Generated 2m ago",
-      "name": "home.recent.card",
-      "id": "home.recent.card",
-      "frame": {
-        "x": 16,
-        "y": 251,
-        "w": 256,
-        "h": 172
-      },
-      "value": null,
-      "help": null,
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UIButton",
-      "axeType": "Button",
-      "role": "AXButton",
-      "roleDescription": "button",
-      "identifier": "home.recent.card",
-      "label": "Marketing Strategy 2025, PDF, Generated 1h ago",
-      "name": "home.recent.card",
-      "id": "home.recent.card",
-      "frame": {
-        "x": 284,
-        "y": 251,
-        "w": 256,
-        "h": 172
-      },
-      "value": null,
-      "help": null,
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UIButton",
-      "axeType": "Button",
-      "role": "AXButton",
-      "roleDescription": "button",
-      "identifier": "home.recent.card",
-      "label": "Investor Update Deck, DECK, Generated 4h ago",
-      "name": "home.recent.card",
-      "id": "home.recent.card",
-      "frame": {
-        "x": 552,
-        "y": 251,
-        "w": 256,
-        "h": 172
-      },
-      "value": null,
-      "help": null,
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UILabel",
-      "axeType": "Heading",
-      "role": "AXHeading",
-      "roleDescription": "heading",
-      "identifier": "",
-      "label": "ACTIVE THREADS",
-      "name": "ACTIVE THREADS",
-      "id": "UILabel_ACTIVE THREADS",
-      "frame": {
-        "x": 16,
-        "y": 439,
-        "w": 370,
-        "h": 14.33
-      },
-      "value": null,
-      "help": null,
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UIButton",
-      "axeType": "Button",
-      "role": "AXButton",
-      "roleDescription": "button",
-      "identifier": "home.thread.row",
-      "label": "Sarah Chen, Can you run the analysis on the new dataset?, 10:42 AM",
-      "name": "home.thread.row",
-      "id": "home.thread.row",
-      "frame": {
-        "x": 16,
-        "y": 469.33,
-        "w": 370,
-        "h": 74
-      },
-      "value": null,
-      "help": null,
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UIButton",
-      "axeType": "Button",
-      "role": "AXButton",
-      "roleDescription": "button",
-      "identifier": "home.thread.row",
-      "label": "Data Bot, Chart generated successfully., 09:15 AM",
-      "name": "home.thread.row",
-      "id": "home.thread.row",
-      "frame": {
-        "x": 16,
-        "y": 544.33,
-        "w": 370,
-        "h": 74
-      },
-      "value": null,
-      "help": null,
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UIButton",
-      "axeType": "Button",
-      "role": "AXButton",
-      "roleDescription": "button",
-      "identifier": "home.thread.row",
-      "label": "Marcus Johnson, I've attached the Q2 report for review., Yesterday",
-      "name": "home.thread.row",
-      "id": "home.thread.row",
-      "frame": {
-        "x": 16,
+        "x": 20,
         "y": 619.33,
-        "w": 370,
-        "h": 74
+        "w": 305,
+        "h": 13.33
+      },
+      "value": null,
+      "help": null,
+      "enabled": true,
+      "parentId": "UIApplication_Wiki",
+      "file": "Wiki/CommandView.swift",
+      "fileLine": 268,
+      "parentClass": null,
+      "dependencies": {
+        "imports": [
+          "UIKit"
+        ],
+        "injected": [
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          }
+        ],
+        "environment": [],
+        "conformances": []
+      },
+      "hierarchy": {
+        "subviews": [
+          {
+            "name": "headerView",
+            "line": 59
+          },
+          {
+            "name": "titleLabel",
+            "line": 60
+          },
+          {
+            "name": "searchContainerView",
+            "line": 61
+          },
+          {
+            "name": "searchIconView",
+            "line": 62
+          },
+          {
+            "name": "searchTextField",
+            "line": 63
+          },
+          {
+            "name": "filtersScrollView",
+            "line": 64
+          },
+          {
+            "name": "filtersStack",
+            "line": 65
+          },
+          {
+            "name": "scrollView",
+            "line": 67
+          },
+          {
+            "name": "scrollContentView",
+            "line": 68
+          },
+          {
+            "name": "librarySectionView",
+            "line": 70
+          },
+          {
+            "name": "libraryTitleLabel",
+            "line": 71
+          },
+          {
+            "name": "libraryCardsStack",
+            "line": 72
+          },
+          {
+            "name": "executionSectionView",
+            "line": 74
+          },
+          {
+            "name": "executionHeaderStack",
+            "line": 75
+          },
+          {
+            "name": "executionItemsStack",
+            "line": 78
+          },
+          {
+            "name": "bottomNavView",
+            "line": 80
+          },
+          {
+            "name": "rowStack",
+            "line": 394
+          },
+          {
+            "name": "iconImageView",
+            "line": 396
+          },
+          {
+            "name": "descriptionLabel",
+            "line": 400
+          },
+          {
+            "name": "timelineColumn",
+            "line": 538
+          },
+          {
+            "name": "timelineDot",
+            "line": 539
+          },
+          {
+            "name": "timelineLine",
+            "line": 540
+          },
+          {
+            "name": "bodyStack",
+            "line": 542
+          },
+          {
+            "name": "cardHeaderStack",
+            "line": 549
+          },
+          {
+            "name": "metadataLabel",
+            "line": 553
+          },
+          {
+            "name": "stack",
+            "line": 689
+          }
+        ],
+        "outlets": [],
+        "bodyComponents": []
+      },
+      "mapped": true
+    },
+    {
+      "className": "UIButton",
+      "axeType": "Button",
+      "role": "AXButton",
+      "roleDescription": "button",
+      "identifier": "command.execution.clearAll",
+      "label": "CLEAR ALL",
+      "name": "command.execution.clearAll",
+      "id": "command.execution.clearAll",
+      "frame": {
+        "x": 325,
+        "y": 614,
+        "w": 57,
+        "h": 24
+      },
+      "value": null,
+      "help": "Clears all execution entries",
+      "enabled": true,
+      "parentId": "UIApplication_Wiki",
+      "file": "Wiki/CommandView.swift",
+      "fileLine": 269,
+      "parentClass": null,
+      "dependencies": {
+        "imports": [
+          "UIKit"
+        ],
+        "injected": [
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          },
+          {
+            "name": "frame",
+            "type": "CGRect"
+          },
+          {
+            "name": "frame",
+            "type": "frame"
+          }
+        ],
+        "environment": [],
+        "conformances": []
+      },
+      "hierarchy": {
+        "subviews": [
+          {
+            "name": "headerView",
+            "line": 59
+          },
+          {
+            "name": "titleLabel",
+            "line": 60
+          },
+          {
+            "name": "searchContainerView",
+            "line": 61
+          },
+          {
+            "name": "searchIconView",
+            "line": 62
+          },
+          {
+            "name": "searchTextField",
+            "line": 63
+          },
+          {
+            "name": "filtersScrollView",
+            "line": 64
+          },
+          {
+            "name": "filtersStack",
+            "line": 65
+          },
+          {
+            "name": "scrollView",
+            "line": 67
+          },
+          {
+            "name": "scrollContentView",
+            "line": 68
+          },
+          {
+            "name": "librarySectionView",
+            "line": 70
+          },
+          {
+            "name": "libraryTitleLabel",
+            "line": 71
+          },
+          {
+            "name": "libraryCardsStack",
+            "line": 72
+          },
+          {
+            "name": "executionSectionView",
+            "line": 74
+          },
+          {
+            "name": "executionHeaderStack",
+            "line": 75
+          },
+          {
+            "name": "executionItemsStack",
+            "line": 78
+          },
+          {
+            "name": "bottomNavView",
+            "line": 80
+          },
+          {
+            "name": "rowStack",
+            "line": 394
+          },
+          {
+            "name": "iconImageView",
+            "line": 396
+          },
+          {
+            "name": "descriptionLabel",
+            "line": 400
+          },
+          {
+            "name": "timelineColumn",
+            "line": 538
+          },
+          {
+            "name": "timelineDot",
+            "line": 539
+          },
+          {
+            "name": "timelineLine",
+            "line": 540
+          },
+          {
+            "name": "bodyStack",
+            "line": 542
+          },
+          {
+            "name": "cardHeaderStack",
+            "line": 549
+          },
+          {
+            "name": "metadataLabel",
+            "line": 553
+          },
+          {
+            "name": "stack",
+            "line": 689
+          }
+        ],
+        "outlets": [],
+        "bodyComponents": []
+      },
+      "mapped": true
+    },
+    {
+      "className": "UIButton",
+      "axeType": "Button",
+      "role": "AXButton",
+      "roleDescription": "button",
+      "identifier": "command.execution.item.0",
+      "label": "14:02:45, Success, Q3_Revenue_Comparison.png",
+      "name": "command.execution.item.0",
+      "id": "command.execution.item.0",
+      "frame": {
+        "x": 20,
+        "y": 650,
+        "w": 362,
+        "h": 88
       },
       "value": null,
       "help": null,
@@ -910,15 +1692,15 @@
       "axeType": "Button",
       "role": "AXButton",
       "roleDescription": "button",
-      "identifier": "home.thread.row",
-      "label": "Elena Rodriguez, Thanks for the update!, Yesterday",
-      "name": "home.thread.row",
-      "id": "home.thread.row",
+      "identifier": "command.execution.item.1",
+      "label": "09:15:20, Success, Project_Alpha_Summary.pdf",
+      "name": "command.execution.item.1",
+      "id": "command.execution.item.1",
       "frame": {
-        "x": 16,
-        "y": 694.33,
-        "w": 370,
-        "h": 74
+        "x": 20,
+        "y": 750,
+        "w": 362,
+        "h": 84.33
       },
       "value": null,
       "help": null,
@@ -936,36 +1718,10 @@
       "axeType": "Button",
       "role": "AXButton",
       "roleDescription": "button",
-      "identifier": "home.create",
-      "label": "Create new",
-      "name": "home.create",
-      "id": "home.create",
-      "frame": {
-        "x": 328,
-        "y": 716,
-        "w": 56,
-        "h": 56
-      },
-      "value": null,
-      "help": "Starts a new chat or command",
-      "enabled": true,
-      "parentId": "UIApplication_Wiki",
-      "file": null,
-      "fileLine": null,
-      "parentClass": null,
-      "dependencies": [],
-      "hierarchy": null,
-      "mapped": false
-    },
-    {
-      "className": "UIButton",
-      "axeType": "Button",
-      "role": "AXButton",
-      "roleDescription": "button",
-      "identifier": "home.bottom.chats",
+      "identifier": "command.bottom.chats",
       "label": "Chats",
-      "name": "home.bottom.chats",
-      "id": "home.bottom.chats",
+      "name": "command.bottom.chats",
+      "id": "command.bottom.chats",
       "frame": {
         "x": 0,
         "y": 786,
@@ -988,10 +1744,10 @@
       "axeType": "Button",
       "role": "AXButton",
       "roleDescription": "button",
-      "identifier": "home.bottom.commands",
+      "identifier": "command.bottom.commands",
       "label": "Commands",
-      "name": "home.bottom.commands",
-      "id": "home.bottom.commands",
+      "name": "command.bottom.commands",
+      "id": "command.bottom.commands",
       "frame": {
         "x": 100.67,
         "y": 786,
@@ -1014,10 +1770,10 @@
       "axeType": "Button",
       "role": "AXButton",
       "roleDescription": "button",
-      "identifier": "home.bottom.analytics",
+      "identifier": "command.bottom.analytics",
       "label": "Analytics",
-      "name": "home.bottom.analytics",
-      "id": "home.bottom.analytics",
+      "name": "command.bottom.analytics",
+      "id": "command.bottom.analytics",
       "frame": {
         "x": 201,
         "y": 786,
@@ -1040,10 +1796,10 @@
       "axeType": "Button",
       "role": "AXButton",
       "roleDescription": "button",
-      "identifier": "home.bottom.profile",
+      "identifier": "command.bottom.profile",
       "label": "Profile",
-      "name": "home.bottom.profile",
-      "id": "home.bottom.profile",
+      "name": "command.bottom.profile",
+      "id": "command.bottom.profile",
       "frame": {
         "x": 301.67,
         "y": 786,
@@ -1062,5 +1818,5 @@
       "mapped": false
     }
   ],
-  "timestamp": 1771342228011
+  "timestamp": 1771343969618
 }

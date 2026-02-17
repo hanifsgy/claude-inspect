@@ -6,8 +6,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var tracker: SimulatorTracker!
     var framesPath: String?
 
-    private var selectionMode = false
-
     func applicationDidFinishLaunching(_ notification: Notification) {
         overlayWindow = OverlayWindow()
         statusBarWindow = StatusBarWindow()
@@ -33,21 +31,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.statusBarWindow.orderOut(nil)
         }
 
-        // Wire overlay click → emit + save + exit selection
+        // Wire overlay click → emit + save
         overlayWindow.overlayView.onClick = { [weak self] (component: ComponentData) in
             guard let self = self else { return }
             emitEvent(OutgoingEvent(event: "click", component: component))
             self.overlayWindow.saveSelection(component)
-            self.setSelectionMode(false)
         }
 
         // Wire status bar buttons
-        statusBarWindow.statusBar.onSelect = { [weak self] in
-            guard let self = self else { return }
-            self.setSelectionMode(!self.selectionMode)
-        }
-
         statusBarWindow.statusBar.onRefresh = { [weak self] in
+            self?.requestRescan()
             self?.reloadFrames()
         }
 
@@ -71,14 +64,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         emitEvent(OutgoingEvent(event: "started", component: nil))
     }
 
-    // MARK: - Selection Mode
-
-    func setSelectionMode(_ enabled: Bool) {
-        selectionMode = enabled
-        overlayWindow.setSelectionMode(enabled)
-        statusBarWindow.statusBar.updateSelectionState(enabled)
-    }
-
     // MARK: - Data Loading
 
     func loadAndApply(from path: String) {
@@ -97,6 +82,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func reloadFrames() {
         guard let path = framesPath else { return }
         loadAndApply(from: path)
+    }
+
+    func requestRescan() {
+        guard let path = framesPath else { return }
+        let stateDir = (path as NSString).deletingLastPathComponent
+        let triggerPath = (stateDir as NSString).appendingPathComponent("scan.trigger")
+        FileManager.default.createFile(atPath: triggerPath, contents: Data())
     }
 
     func applicationWillTerminate(_ notification: Notification) {

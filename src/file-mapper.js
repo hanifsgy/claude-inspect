@@ -96,6 +96,71 @@ function discoverClasses(swiftFiles) {
 }
 
 /**
+ * Build an index of string literals across Swift files.
+ * Useful for matching AX identifiers like "home.header.logo" to source lines.
+ * Returns Map<literal, Array<{file, line, text}>>
+ */
+function buildStringLiteralIndex(swiftFiles) {
+  const literalMap = new Map();
+  const stringRegex = /"([^"\\]*(?:\\.[^"\\]*)*)"/g;
+
+  for (const file of swiftFiles) {
+    let content;
+    try {
+      content = readFileSync(file, "utf-8");
+    } catch {
+      continue;
+    }
+
+    const lines = content.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const text = lines[i];
+      stringRegex.lastIndex = 0;
+
+      let match;
+      while ((match = stringRegex.exec(text)) !== null) {
+        const literal = match[1];
+        if (!literal) continue;
+
+        const list = literalMap.get(literal) || [];
+        list.push({ file, line: i + 1, text });
+        literalMap.set(literal, list);
+      }
+    }
+  }
+
+  return literalMap;
+}
+
+function selectBestLiteralMatch(candidates) {
+  if (!candidates || candidates.length === 0) return null;
+
+  let best = candidates[0];
+  let bestScore = scoreLiteralCandidate(best);
+
+  for (let i = 1; i < candidates.length; i++) {
+    const candidate = candidates[i];
+    const score = scoreLiteralCandidate(candidate);
+    if (score > bestScore) {
+      best = candidate;
+      bestScore = score;
+    }
+  }
+
+  return best;
+}
+
+function scoreLiteralCandidate(candidate) {
+  const text = candidate.text || "";
+  let score = 0;
+  if (/accessibilityIdentifier/.test(text)) score += 100;
+  if (/\.id\(/.test(text)) score += 30;
+  if (/text\(/.test(text)) score -= 5;
+  if (/print\(/.test(text)) score -= 10;
+  return score;
+}
+
+/**
  * Phase B: Extract view hierarchy info from a class file.
  */
 function extractHierarchy(file, content) {
@@ -197,9 +262,55 @@ function extractDependencies(content) {
 export function reconcile(flatNodes, projectDir) {
   const swiftFiles = findSwiftFiles(projectDir);
   const classMap = discoverClasses(swiftFiles);
+  const literalMap = buildStringLiteralIndex(swiftFiles);
+  const fileCache = new Map();
+
+  const loadFileData = (file) => {
+    if (fileCache.has(file)) return fileCache.get(file);
+
+    let content;
+    try {
+      content = readFileSync(file, "utf-8");
+    } catch {
+      const fallback = { dependencies: [], hierarchy: null };
+      fileCache.set(file, fallback);
+      return fallback;
+    }
+
+    const loaded = {
+      dependencies: extractDependencies(content),
+      hierarchy: extractHierarchy(file, content),
+    };
+    fileCache.set(file, loaded);
+    return loaded;
+  };
 
   const enriched = flatNodes.map((node) => {
-    const classInfo = classMap.get(node.className);
+    let classInfo = classMap.get(node.className);
+
+    // Fallback strategy: match AX identifier/name against Swift string literals,
+    // preferring accessibilityIdentifier assignments.
+    if (!classInfo) {
+      const probes = [];
+      if (node.identifier && typeof node.identifier === "string") probes.push(node.identifier);
+      if (node.name && typeof node.name === "string" && node.name !== node.identifier) probes.push(node.name);
+
+      for (const probe of probes) {
+        const candidates = literalMap.get(probe);
+        const best = selectBestLiteralMatch(candidates);
+        if (best) {
+          classInfo = {
+            file: best.file,
+            line: best.line,
+            type: "literal",
+            parentClass: null,
+            protocols: [],
+            inheritance: "",
+          };
+          break;
+        }
+      }
+    }
 
     if (!classInfo) {
       return {
@@ -213,31 +324,15 @@ export function reconcile(flatNodes, projectDir) {
       };
     }
 
-    let content;
-    try {
-      content = readFileSync(classInfo.file, "utf-8");
-    } catch {
-      return {
-        ...node,
-        file: relative(projectDir, classInfo.file),
-        fileLine: classInfo.line,
-        parentClass: classInfo.parentClass,
-        dependencies: [],
-        hierarchy: null,
-        mapped: true,
-      };
-    }
-
-    const hierarchy = extractHierarchy(classInfo.file, content);
-    const dependencies = extractDependencies(content);
+    const fileData = loadFileData(classInfo.file);
 
     return {
       ...node,
       file: relative(projectDir, classInfo.file),
       fileLine: classInfo.line,
       parentClass: classInfo.parentClass,
-      dependencies,
-      hierarchy,
+      dependencies: fileData.dependencies,
+      hierarchy: fileData.hierarchy,
       mapped: true,
     };
   });
