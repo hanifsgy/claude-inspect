@@ -10,6 +10,17 @@ class OverlayView: NSView {
         didSet { needsDisplay = true }
     }
 
+    /// Detected content rect: exact iOS content area within the macOS simulator window.
+    /// If provided by geometry detection, used for precise coordinate mapping.
+    var contentRect: ContentRect? {
+        didSet { needsDisplay = true }
+    }
+
+    /// Render scale from geometry detection (iOS pts → macOS pts)
+    var renderScale: Double? {
+        didSet { needsDisplay = true }
+    }
+
     var hoveredComponent: ComponentData? {
         didSet { needsDisplay = true }
     }
@@ -31,29 +42,40 @@ class OverlayView: NSView {
 
     // MARK: - Dynamic Coordinate Mapping
 
-    /// macOS simulator title bar height
-    private let macTitleBar: CGFloat = 28
-
     /// Convert iOS point coordinates to overlay view coordinates.
-    /// Computed dynamically from overlay bounds and iOS screen size.
+    /// Uses detected contentRect from geometry.js when available,
+    /// otherwise falls back to heuristic calculation.
     func iosToOverlay(_ iosRect: FrameData) -> NSRect {
-        let contentHeight = bounds.height - macTitleBar
-        let contentWidth = bounds.width
+        guard iosScreen.w > 0, iosScreen.h > 0 else { return .zero }
 
-        guard iosScreen.w > 0, iosScreen.h > 0, contentWidth > 0, contentHeight > 0 else {
-            return .zero
+        let offsetX: CGFloat
+        let offsetY: CGFloat
+        let scale: CGFloat
+
+        if let cr = contentRect {
+            // Precise mode: use detected content rect from geometry.js
+            // contentRect tells us exactly where iOS content renders within the window
+            scale = CGFloat(cr.w) / CGFloat(iosScreen.w)
+            offsetX = CGFloat(cr.x)
+            // contentRect.y is in macOS CG coordinates (top-down), which matches our flipped view
+            offsetY = CGFloat(cr.y)
+        } else {
+            // Fallback: estimate from window bounds
+            let macTitleBar: CGFloat = 28
+            let contentHeight = bounds.height - macTitleBar
+            let contentWidth = bounds.width
+
+            guard contentWidth > 0, contentHeight > 0 else { return .zero }
+
+            let scaleX = contentWidth / CGFloat(iosScreen.w)
+            let scaleY = contentHeight / CGFloat(iosScreen.h)
+            scale = min(scaleX, scaleY)
+
+            let renderedW = CGFloat(iosScreen.w) * scale
+            let renderedH = CGFloat(iosScreen.h) * scale
+            offsetX = (contentWidth - renderedW) / 2
+            offsetY = macTitleBar + (contentHeight - renderedH) / 2
         }
-
-        // Uniform scale to fit iOS screen into available area
-        let scaleX = contentWidth / CGFloat(iosScreen.w)
-        let scaleY = contentHeight / CGFloat(iosScreen.h)
-        let scale = min(scaleX, scaleY)
-
-        // Center within content area
-        let renderedW = CGFloat(iosScreen.w) * scale
-        let renderedH = CGFloat(iosScreen.h) * scale
-        let offsetX = (contentWidth - renderedW) / 2
-        let offsetY = macTitleBar + (contentHeight - renderedH) / 2
 
         return NSRect(
             x: CGFloat(iosRect.x) * scale + offsetX,

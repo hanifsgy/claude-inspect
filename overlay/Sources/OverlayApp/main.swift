@@ -88,6 +88,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applyData(_ data: OverlayData) {
         overlayWindow.overlayView.iosScreen = data.screen
+        overlayWindow.overlayView.contentRect = data.contentRect
+        overlayWindow.overlayView.renderScale = data.scale
         overlayWindow.overlayView.components = data.components
         statusBarWindow.statusBar.updateComponentCount(data.components.count)
     }

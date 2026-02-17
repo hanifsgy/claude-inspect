@@ -12,6 +12,7 @@
 import { describeUI, flattenTree } from "./axe.js";
 import { reconcile } from "./file-mapper.js";
 import { saveHierarchy } from "./store.js";
+import { detectGeometry } from "./geometry.js";
 
 const projectPath = process.argv[2];
 const simulatorUdid = process.argv[3]; // optional
@@ -55,7 +56,22 @@ const hierarchy = { tree, enriched, timestamp: Date.now() };
 saveHierarchy(hierarchy);
 console.error(`[scan] Saved hierarchy to data/hierarchy.json`);
 
-// Step 5: Output overlay-ready format with screen info + enriched components
+// Step 5: Detect simulator geometry — exact iOS content rect within macOS window
+console.error(`[scan] Detecting simulator geometry...`);
+const geometry = detectGeometry(screen.w, screen.h);
+const verticalOffset = 20;
+const contentRect = {
+  ...geometry.contentRect,
+  y: geometry.contentRect.y + verticalOffset,
+};
+
+console.error(
+  `[scan] Content rect: (${contentRect.x.toFixed(1)}, ${contentRect.y.toFixed(1)}, ${contentRect.w.toFixed(1)}, ${contentRect.h.toFixed(1)})`
+);
+console.error(`[scan] Applied vertical offset: +${verticalOffset}px`);
+console.error(`[scan] Render scale: ${geometry.scale.toFixed(4)}`);
+
+// Step 6: Output overlay-ready format with screen info + contentRect + enriched components
 const components = enriched.map((node) => ({
   id: node.id,
   className: node.className,
@@ -67,6 +83,8 @@ const components = enriched.map((node) => ({
 
 const output = {
   screen,
+  contentRect,
+  scale: geometry.scale,
   components,
 };
 

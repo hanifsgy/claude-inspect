@@ -80,7 +80,7 @@ class OverlayWindow: NSWindow {
 
         if let comp = overlayView.hoveredComponent {
             tooltipView.show(component: comp)
-            positionTooltip()
+            positionTooltip(near: windowPoint)
         } else {
             tooltipView.isHidden = true
         }
@@ -93,15 +93,25 @@ class OverlayWindow: NSWindow {
         }
     }
 
-    private func positionTooltip() {
-        let tooltipMargin: CGFloat = 8
-        let tooltipWidth = min(overlayView.bounds.width - 16, 320)
-        let tooltipX = (overlayView.bounds.width - tooltipWidth) / 2
+    private func positionTooltip(near point: NSPoint) {
+        let edgePadding: CGFloat = 8
+        let pointerGap: CGFloat = 12
+        let tooltipWidth = min(overlayView.bounds.width - edgePadding * 2, 320)
 
         var tf = tooltipView.frame
-        tf.origin.x = tooltipX
-        tf.origin.y = tooltipMargin  // near bottom of the overlay view
         tf.size.width = tooltipWidth
+
+        let preferredX = point.x + 12
+        let maxX = overlayView.bounds.width - tooltipWidth - edgePadding
+        tf.origin.x = max(edgePadding, min(preferredX, maxX))
+
+        let preferredY = point.y - tf.size.height - pointerGap
+        if preferredY >= edgePadding {
+            tf.origin.y = preferredY
+        } else {
+            tf.origin.y = min(point.y + pointerGap, overlayView.bounds.height - tf.size.height - edgePadding)
+        }
+
         tooltipView.frame = tf
     }
 

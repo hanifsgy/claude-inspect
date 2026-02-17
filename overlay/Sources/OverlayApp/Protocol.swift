@@ -4,10 +4,21 @@ import AppKit
 
 struct OverlayData: Codable {
     let screen: ScreenSize
+    let contentRect: ContentRect?
+    let scale: Double?
     let components: [ComponentData]
 }
 
 struct ScreenSize: Codable {
+    let w: Double
+    let h: Double
+}
+
+/// The exact iOS content area within the macOS simulator window, in macOS points.
+/// Detected by geometry.js from window size, screenshot, and display scale.
+struct ContentRect: Codable {
+    let x: Double
+    let y: Double
     let w: Double
     let h: Double
 }
