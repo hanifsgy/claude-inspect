@@ -9,7 +9,26 @@ This is a **standalone toolkit** — it lives outside your iOS project and conne
 - `axe` CLI in your PATH (`axe describe-ui` must work)
 - Claude Code CLI
 
-## 1. Clone and build
+## Quick setup (one command)
+
+From your iOS project root:
+
+```bash
+/path/to/claude-inspect/scripts/setup.sh
+```
+
+This creates/updates `.mcp.json`, `.claude/settings.local.json`, and copies slash commands — all with correct absolute paths. Builds the overlay if needed.
+
+That's it. Start Claude Code and go.
+
+## Manual setup
+
+If you prefer to set things up yourself:
+
+<details>
+<summary>Step-by-step manual instructions</summary>
+
+### 1. Clone and build
 
 ```bash
 git clone https://github.com/hanifsgy/claude-inspect.git
@@ -18,11 +37,7 @@ npm install
 ./scripts/build-overlay.sh
 ```
 
-Note the absolute path — you'll need it below. Example: `/Users/you/tools/claude-inspect`
-
-## 2. Connect to your iOS project
-
-In your **actual iOS project root**, create or update `.mcp.json`:
+### 2. Create `.mcp.json` in your iOS project root
 
 ```json
 {
@@ -36,33 +51,9 @@ In your **actual iOS project root**, create or update `.mcp.json`:
 }
 ```
 
-> **Important**: The `cwd` field must point to the claude-inspect directory so the server can find the overlay binary, scripts, and state files.
+The `cwd` field must point to the claude-inspect directory.
 
-This single file is what makes Claude aware of the inspector tools. When Claude Code starts in your project directory, it reads `.mcp.json` and connects to the MCP server automatically.
-
-## 3. Allow the MCP tools
-
-In your project's `.claude/settings.local.json` (create if it doesn't exist):
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "mcp__simulator-inspector__inspector_start",
-      "mcp__simulator-inspector__inspector_stop",
-      "mcp__simulator-inspector__get_hierarchy",
-      "mcp__simulator-inspector__wait_for_selection",
-      "mcp__simulator-inspector__explain_component"
-    ]
-  }
-}
-```
-
-Without this, Claude will prompt you to approve each tool call individually.
-
-## 4. Add the selection hook (optional but recommended)
-
-The hook automatically injects selected component context into every Claude prompt. Add to your `.claude/settings.local.json`:
+### 3. Create `.claude/settings.local.json`
 
 ```json
 {
@@ -73,6 +64,7 @@ The hook automatically injects selected component context into every Claude prom
       "mcp__simulator-inspector__get_hierarchy",
       "mcp__simulator-inspector__wait_for_selection",
       "mcp__simulator-inspector__explain_component",
+      "Bash(/ABSOLUTE/PATH/TO/claude-inspect/scripts/*)",
       "Bash(/ABSOLUTE/PATH/TO/claude-inspect/hooks/user-prompt-submit.sh)"
     ]
   },
@@ -86,16 +78,14 @@ The hook automatically injects selected component context into every Claude prom
 }
 ```
 
-With this hook, after you click a component in the overlay, your next Claude prompt automatically receives the component's class, file:line, confidence score, and evidence chain.
-
-## 5. Copy slash commands (optional)
-
-To use `/infra-basic:simulator-inspector-on` and `off` shortcuts:
+### 4. Copy slash commands
 
 ```bash
 mkdir -p .claude/commands/infra-basic
-cp /ABSOLUTE/PATH/TO/claude-inspect/.claude/commands/infra-basic/*.md .claude/commands/infra-basic/
+cp /path/to/claude-inspect/.claude/commands/infra-basic/*.md .claude/commands/infra-basic/
 ```
+
+</details>
 
 ## 6. Usage
 
