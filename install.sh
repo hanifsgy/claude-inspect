@@ -7,6 +7,18 @@ INSTALL_DIR_DEFAULT="$HOME/.claude-inspect"
 INSTALL_DIR="$INSTALL_DIR_DEFAULT"
 BUILD_FROM_SOURCE=0
 PROJECT_DIR="$(pwd)"
+RUNTIME_PATHS=(
+    "/.claude/commands/infra-basic/"
+    "/config/"
+    "/hooks/"
+    "/overlay/"
+    "/scripts/"
+    "/src/"
+    "/state/"
+    "/install.sh"
+    "/package.json"
+    "/package-lock.json"
+)
 
 usage() {
     echo "Usage: $0 [--dir <install-path>] [--build-from-source]"
@@ -90,6 +102,7 @@ clone_or_update_repo() {
     if [ -d "$INSTALL_DIR/.git" ]; then
         echo "  Existing install found, pulling latest changes..."
         git -C "$INSTALL_DIR" pull --ff-only
+        configure_sparse_checkout
         return
     fi
 
@@ -100,7 +113,14 @@ clone_or_update_repo() {
     fi
 
     mkdir -p "$(dirname "$INSTALL_DIR")"
-    git clone "$REPO_URL" "$INSTALL_DIR"
+    git clone --depth 1 --filter=blob:none --sparse "$REPO_URL" "$INSTALL_DIR"
+    configure_sparse_checkout
+}
+
+configure_sparse_checkout() {
+    echo "  Checking out runtime files only (sparse checkout)..."
+    git -C "$INSTALL_DIR" sparse-checkout init --no-cone
+    git -C "$INSTALL_DIR" sparse-checkout set "${RUNTIME_PATHS[@]}"
 }
 
 reexec_using_installed_script_if_needed() {

@@ -31,6 +31,8 @@ bash <(curl -sL https://raw.githubusercontent.com/hanifsgy/claude-inspect/main/i
 
 This installer checks prerequisites, clones/updates the tool to `~/.claude-inspect`, installs npm deps, prepares the overlay, and runs setup for your current project directory.
 
+The installer uses sparse checkout so only runtime files are checked out locally (not docs/planning folders like `Wiki/`).
+
 Optional health check:
 
 ```bash
