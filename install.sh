@@ -109,18 +109,19 @@ install_node_deps() {
 }
 
 run_setup() {
-    local setup_args=()
-
-    if [ "$BUILD_FROM_SOURCE" -eq 1 ]; then
-        setup_args+=("--build-from-source")
-    fi
-
     echo "[4/5] Preparing overlay binary (download/build via setup.sh)..."
     echo "[5/5] Configuring current project for MCP inspector..."
-    (
-        cd "$PROJECT_DIR"
-        "$INSTALL_DIR/scripts/setup.sh" "${setup_args[@]}"
-    )
+    if [ "$BUILD_FROM_SOURCE" -eq 1 ]; then
+        (
+            cd "$PROJECT_DIR"
+            "$INSTALL_DIR/scripts/setup.sh" --build-from-source
+        )
+    else
+        (
+            cd "$PROJECT_DIR"
+            "$INSTALL_DIR/scripts/setup.sh"
+        )
+    fi
 }
 
 echo "Installing simulator-inspector"
