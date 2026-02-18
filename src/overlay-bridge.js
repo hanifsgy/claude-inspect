@@ -25,8 +25,8 @@ export class OverlayBridge {
 
   /**
    * Ensure the overlay is running. If already started (e.g. by the shell
-   * script), skips spawning. Starts background file watching only when
-   * clicks are not already delivered over stdout.
+   * script), skips spawning. Background file watching always runs as a
+   * fallback in case stdout delivery is interrupted.
    */
   start(udid = "booted") {
     if (this.process) {
@@ -69,11 +69,10 @@ export class OverlayBridge {
   }
 
   /**
-   * Always-on file watcher. Runs continuously so clicks are buffered
-   * even when no waitForClick is active.
+   * Always-on file watcher. Runs continuously as a delivery fallback so
+   * clicks are buffered even when no waitForClick is active.
    */
   _startBackground() {
-    if (this._ownsStdoutEvents) return;
     if (this._bgTimer) return;
     try { this._bgLastMod = statSync(SELECTION_PATH).mtimeMs; } catch {}
 

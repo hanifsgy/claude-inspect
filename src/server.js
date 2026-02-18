@@ -293,7 +293,12 @@ server.tool(
         lines.push(`**Confidence:** ${pct}% (${level})${selection.ambiguous ? " - AMBIGUOUS" : ""}`);
       }
 
-      lines.push(`**Frame:** (${selection.frame.x}, ${selection.frame.y}, ${selection.frame.w}, ${selection.frame.h})`);
+      if (selection.frame && typeof selection.frame === "object") {
+        const { x, y, w, h } = selection.frame;
+        lines.push(`**Frame:** (${x}, ${y}, ${w}, ${h})`);
+      } else {
+        lines.push("**Frame:** unavailable");
+      }
 
       if (selection.evidence && selection.evidence.length > 0) {
         lines.push(``, `**Evidence:**`);

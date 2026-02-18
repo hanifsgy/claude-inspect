@@ -43,18 +43,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.statusBarWindow.statusBar.updateLocked(component)
         }
 
-        // Wire status bar buttons — three-state toggle
+        // Wire status bar buttons — normal/select toggle (locked can be cleared)
         statusBarWindow.statusBar.onToggleMode = { [weak self] in
             guard let self = self else { return }
             if self.overlayWindow.overlayView.lockedComponent != nil {
-                // Locked → clear lock, then auto-enter Select so user can
-                // immediately click the next component (bridges the gap between
-                // Claude processing and the user continuing to inspect)
+                // Locked -> clear lock and return to normal navigation mode.
                 self.overlayWindow.overlayView.lockedComponent = nil
                 self.overlayWindow.overlayView.hoveredComponent = nil
                 self.statusBarWindow.statusBar.updateLocked(nil)
-                self.overlayWindow.isSelectMode = true
-                self.statusBarWindow.statusBar.updateMode(true)
+                self.overlayWindow.isSelectMode = false
+                self.statusBarWindow.statusBar.updateMode(false)
             } else {
                 // Navigate ↔ Selecting
                 self.overlayWindow.isSelectMode.toggle()
