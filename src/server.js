@@ -126,6 +126,7 @@ server.tool(
   {},
   async () => {
     const hierarchy = currentHierarchy || loadHierarchy();
+    const maxAgeMs = 5 * 60 * 1000;
 
     if (!hierarchy) {
       return {
@@ -133,6 +134,19 @@ server.tool(
           {
             type: "text",
             text: "No hierarchy available. Run inspector_start first.",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const isStale = !hierarchy.timestamp || (Date.now() - hierarchy.timestamp > maxAgeMs);
+    if (isStale) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Hierarchy is stale. Run inspector_start again to refresh mappings.",
           },
         ],
         isError: true,
@@ -226,6 +240,9 @@ server.tool(
           lines.push(`- ${cand.file}:${cand.line} (${(cand.confidence * 100).toFixed(0)}%)`);
         }
       }
+
+      lines.push(``, `**Session status:** awaiting_user_action`);
+      lines.push(`Do not call \`wait_for_selection\` again until the user asks for next selection.`);
 
       return {
         content: [{ type: "text", text: lines.join("\n") }],

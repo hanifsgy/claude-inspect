@@ -68,9 +68,9 @@ Observations / Gaps
 
 ### 4c. Prompt for next action
 After displaying the analysis, tell the user:
-> "Tap **✕ Clear** on the overlay to select another component, or tell me what you'd like to dig into."
+> "Say **next** when you want me to wait for another component selection, or ask a follow-up question about this component."
 
-Then **immediately call `wait_for_selection` again** (go back to 4a) without waiting for the user to re-run the skill. The bridge queues clicks made while Claude is responding, so the next call may return instantly if the user already picked something.
+Do **not** call `wait_for_selection` again immediately. Re-enter step 4a only when the user explicitly requests another selection (for example: "next", "another", "select", "continue") or taps another component and asks to inspect it.
 
 **Only exit the loop if:**
 - The user explicitly says "stop", "done", "exit", or similar

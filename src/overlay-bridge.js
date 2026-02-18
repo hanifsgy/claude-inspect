@@ -18,12 +18,15 @@ export class OverlayBridge {
     this._waiters = []; // pending waitForClick Promises
     this._bgTimer = null;
     this._bgLastMod = 0;
+    this._ownsStdoutEvents = false;
+    this._lastDeliveredId = null;
+    this._lastDeliveredAt = 0;
   }
 
   /**
    * Ensure the overlay is running. If already started (e.g. by the shell
-   * script), skips spawning. Always starts the background file watcher so
-   * selections are buffered even between waitForClick calls.
+   * script), skips spawning. Starts background file watching only when
+   * clicks are not already delivered over stdout.
    */
   start(udid = "booted") {
     if (this.process) {
@@ -44,9 +47,11 @@ export class OverlayBridge {
       stdio: ["ignore", "pipe", "ignore"],
       detached: true,
     });
+    this._ownsStdoutEvents = true;
 
     this.process.on("exit", () => {
       this.process = null;
+      this._ownsStdoutEvents = false;
       this._stopBackground();
     });
 
@@ -68,6 +73,7 @@ export class OverlayBridge {
    * even when no waitForClick is active.
    */
   _startBackground() {
+    if (this._ownsStdoutEvents) return;
     if (this._bgTimer) return;
     try { this._bgLastMod = statSync(SELECTION_PATH).mtimeMs; } catch {}
 
@@ -92,10 +98,15 @@ export class OverlayBridge {
 
   /**
    * Route a selection to the next waiter, or buffer it if no one is waiting.
-   * Also writes unlock.trigger so the overlay clears its lock state.
    */
   _deliver(data) {
-    try { writeFileSync(UNLOCK_PATH, ""); } catch {}
+    if (!data || !data.id) return;
+    const now = Date.now();
+    if (data.id === this._lastDeliveredId && (now - this._lastDeliveredAt) < 500) {
+      return;
+    }
+    this._lastDeliveredId = data.id;
+    this._lastDeliveredAt = now;
 
     if (this._waiters.length > 0) {
       const waiter = this._waiters.shift();
@@ -128,7 +139,10 @@ export class OverlayBridge {
     return new Promise((resolve, reject) => {
       let timer;
       const waiter = {
-        resolve,
+        resolve: (data) => {
+          try { writeFileSync(UNLOCK_PATH, ""); } catch {}
+          resolve(data);
+        },
         reject,
         cleanup: () => clearTimeout(timer),
       };
@@ -147,6 +161,9 @@ export class OverlayBridge {
     this._waiters.forEach((w) => { w.cleanup(); w.reject(new Error("Inspector stopped")); });
     this._waiters = [];
     this._queue = [];
+    this._ownsStdoutEvents = false;
+    this._lastDeliveredId = null;
+    this._lastDeliveredAt = 0;
     if (this.process) {
       this.process.kill();
       this.process = null;
