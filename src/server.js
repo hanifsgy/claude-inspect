@@ -113,6 +113,8 @@ server.tool(
         identifierRegistry = {
           path: registryMatch.path,
           ...applied.stats,
+          refreshed: registryMatch.refreshed || false,
+          refreshReason: registryMatch.refreshReason || null,
         };
       }
 
@@ -149,9 +151,12 @@ server.tool(
         scanInfo.push(`Override sources: ${sources.join(", ")}`);
       }
       if (identifierRegistry) {
-        scanInfo.push(
-          `Identifier registry: applied=${identifierRegistry.applied}, ambiguous=${identifierRegistry.ambiguous}`
-        );
+        const regLine = `Identifier registry: applied=${identifierRegistry.applied}, ambiguous=${identifierRegistry.ambiguous}`;
+        if (identifierRegistry.refreshed) {
+          scanInfo.push(`${regLine} (refreshed: ${identifierRegistry.refreshReason})`);
+        } else {
+          scanInfo.push(regLine);
+        }
       }
 
       if (isFresh && !cacheMatchesProject && !rescan) {
