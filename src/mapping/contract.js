@@ -43,6 +43,12 @@ export const SIGNAL_TYPES = {
 
   // User explicitly mapped via override file or comment annotation
   MANUAL_OVERRIDE: "manual_override",
+
+  // AX hint matches localized string or comment in source
+  AX_HINT: "ax_hint",
+
+  // AX traits match capabilities defined in source (isButton, isLink, etc.)
+  AX_TRAITS: "ax_traits",
 };
 
 // ---------------------------------------------------------------------------
@@ -59,6 +65,8 @@ export const SIGNAL_WEIGHTS = {
   [SIGNAL_TYPES.MODULE_SCOPE]: 0.2, // Boost — confirms other signals
   [SIGNAL_TYPES.HIERARCHY_POSITION]: 0.2, // Boost — confirms other signals
   [SIGNAL_TYPES.LABEL_FUZZY]: 0.15, // Weak — fuzzy match is unreliable
+  [SIGNAL_TYPES.AX_HINT]: 0.25, // Weak-moderate — hints can match localized strings
+  [SIGNAL_TYPES.AX_TRAITS]: 0.2, // Boost — confirms button/link/etc capabilities
 };
 
 // Per-project learned weights (can be loaded/saved)

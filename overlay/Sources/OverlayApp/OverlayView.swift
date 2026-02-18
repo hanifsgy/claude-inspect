@@ -96,28 +96,46 @@ class OverlayView: NSView {
 
     // MARK: - Drawing
 
+    /// Get color based on confidence level
+    func colorForConfidence(_ confidence: Double?, isHovered: Bool) -> NSColor {
+        guard let conf = confidence else {
+            // No confidence data - use default blue
+            return isHovered 
+                ? NSColor(red: 0.40, green: 0.70, blue: 1.0, alpha: 1.0)
+                : NSColor(red: 0.29, green: 0.56, blue: 0.85, alpha: 0.5)
+        }
+        
+        if conf >= 0.7 {
+            // High confidence - green
+            return isHovered
+                ? NSColor(red: 0.20, green: 0.85, blue: 0.40, alpha: 1.0)
+                : NSColor(red: 0.20, green: 0.75, blue: 0.35, alpha: 0.6)
+        } else if conf >= 0.4 {
+            // Medium confidence - yellow/orange
+            return isHovered
+                ? NSColor(red: 1.0, green: 0.80, blue: 0.20, alpha: 1.0)
+                : NSColor(red: 0.95, green: 0.70, blue: 0.15, alpha: 0.5)
+        } else {
+            // Low confidence - red
+            return isHovered
+                ? NSColor(red: 1.0, green: 0.35, blue: 0.35, alpha: 1.0)
+                : NSColor(red: 0.90, green: 0.30, blue: 0.30, alpha: 0.5)
+        }
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
         let isLocked = lockedComponent != nil
 
-        let normalColor: NSColor
-        let hoverColor: NSColor
         let hoverFill: NSColor
 
         if isLocked {
-            // Dim everything so the locked component stands out
-            normalColor = NSColor(red: 0.29, green: 0.56, blue: 0.85, alpha: 0.18)
-            hoverColor  = normalColor
-            hoverFill   = .clear
+            hoverFill = .clear
         } else if isSelectMode {
-            normalColor = NSColor(red: 0.95, green: 0.60, blue: 0.10, alpha: 0.6)
-            hoverColor  = NSColor(red: 1.0,  green: 0.75, blue: 0.20, alpha: 1.0)
-            hoverFill   = NSColor(red: 1.0,  green: 0.75, blue: 0.20, alpha: 0.10)
+            hoverFill = NSColor(red: 1.0,  green: 0.75, blue: 0.20, alpha: 0.10)
         } else {
-            normalColor = NSColor(red: 0.29, green: 0.56, blue: 0.85, alpha: 0.5)
-            hoverColor  = NSColor(red: 0.40, green: 0.70, blue: 1.0,  alpha: 1.0)
-            hoverFill   = NSColor(red: 0.40, green: 0.70, blue: 1.0,  alpha: 0.08)
+            hoverFill = NSColor(red: 0.40, green: 0.70, blue: 1.0,  alpha: 0.08)
         }
 
         for component in components {
@@ -126,20 +144,17 @@ class OverlayView: NSView {
             guard rect.width > 0, rect.height > 0 else { continue }
 
             let isHovered = !isLocked && hoveredComponent?.id == component.id
+            let strokeColor = colorForConfidence(component.confidence, isHovered: isHovered)
 
             if isHovered {
                 hoverFill.setFill()
                 NSBezierPath(rect: rect).fill()
-                hoverColor.setStroke()
-                let path = NSBezierPath(rect: rect)
-                path.lineWidth = 2.0
-                path.stroke()
-            } else {
-                normalColor.setStroke()
-                let path = NSBezierPath(rect: rect)
-                path.lineWidth = 1.0
-                path.stroke()
             }
+            
+            strokeColor.setStroke()
+            let path = NSBezierPath(rect: rect)
+            path.lineWidth = isHovered ? 2.0 : 1.0
+            path.stroke()
         }
 
         // Draw locked component on top — green glow

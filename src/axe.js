@@ -54,6 +54,45 @@ function getBootedUdid() {
 }
 
 /**
+ * Parse AXTraits bitmask into capabilities array.
+ */
+function parseTraits(traits) {
+  if (!traits || typeof traits !== "string") return [];
+  
+  const traitMap = {
+    "button": "isButton",
+    "link": "isLink", 
+    "header": "isHeader",
+    "searchfield": "isSearchField",
+    "image": "isImage",
+    "selected": "isSelected",
+    "plays sound": "playsSound",
+    "keyboard key": "isKeyboardKey",
+    "static text": "isStaticText",
+    "summary element": "isSummaryElement",
+    "not enabled": "isNotEnabled",
+    "updates frequently": "updatesFrequently",
+    "starts media session": "startsMediaSession",
+    "adjustable": "isAdjustable",
+    "allows direct interaction": "allowsDirectInteraction",
+    "causes page turn": "causesPageTurn",
+    "tab bar": "isTabBar",
+    "text entry": "isTextEntry",
+  };
+  
+  const lower = traits.toLowerCase();
+  const capabilities = [];
+  
+  for (const [key, cap] of Object.entries(traitMap)) {
+    if (lower.includes(key)) {
+      capabilities.push(cap);
+    }
+  }
+  
+  return capabilities;
+}
+
+/**
  * Transform a single AXe JSON node into our normalized format.
  */
 function transformNode(node) {
@@ -73,6 +112,10 @@ function transformNode(node) {
       }
     : { x: 0, y: 0, w: 0, h: 0 };
 
+  // Parse AXTraits into capabilities
+  const traits = node.AXTraits || node.traits || "";
+  const capabilities = parseTraits(traits);
+
   const children = (node.children || []).map(transformNode);
 
   return {
@@ -86,7 +129,11 @@ function transformNode(node) {
     id,
     frame,
     value: node.AXValue || null,
-    help: node.help || null,
+    help: node.help || node.AXHelp || null,
+    hint: node.hint || node.AXHint || null,
+    traits: traits,
+    capabilities,
+    customActions: node.AXCustomActions || null,
     enabled: node.enabled !== false,
     children,
   };

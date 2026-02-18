@@ -79,6 +79,9 @@ server.tool(
           className: node.className,
           name: node.name,
           frame: node.frame,
+          confidence: node.confidence,
+          file: node.file,
+          fileLine: node.fileLine,
         }));
         bridge.highlight(components);
 
@@ -139,6 +142,9 @@ server.tool(
         className: node.className,
         name: node.name,
         frame: node.frame,
+        confidence: node.confidence,
+        file: node.file,
+        fileLine: node.fileLine,
       }));
       bridge.highlight(components);
 
