@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "scan": "node src/scan.js",
+    "index-identifiers": "node src/index-identifiers.js",
+    "mapping-audit": "node src/mapping-audit.js",
     "build-overlay": "./scripts/build-overlay.sh",
     "inspector-on": "./scripts/simulator-inspector-on.sh",
     "inspector-off": "./scripts/simulator-inspector-off.sh"

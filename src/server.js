@@ -7,6 +7,8 @@ import {
   summarizeIndexes,
   matchAll,
   loadOverrides,
+  loadIdentifierRegistry,
+  applyIdentifierRegistry,
   setStateDir,
   computeMetrics,
   formatMetrics,
@@ -59,8 +61,12 @@ server.tool(
         currentHierarchy = existing;
         const metrics = computeMetrics(existing.enriched);
         const indexSummary = existing.scanMeta?.indexSummary;
+        const registrySummary = existing.scanMeta?.identifierRegistry;
         const indexLine = indexSummary
           ? `\nIndex: strategy=${indexSummary.strategy} modules=${indexSummary.modules} swiftFiles=${indexSummary.swiftFiles}`
+          : "";
+        const registryLine = registrySummary
+          ? `\nIdentifier registry: applied=${registrySummary.applied} ambiguous=${registrySummary.ambiguous}`
           : "";
 
         bridge.start(simulatorUdid || "booted");
@@ -76,7 +82,7 @@ server.tool(
           content: [
             {
               type: "text",
-              text: `Inspector started (cached scan).\n${formatMetrics(metrics)}${indexLine}`,
+              text: `Inspector started (cached scan).\n${formatMetrics(metrics)}${indexLine}${registryLine}`,
             },
           ],
         };
@@ -91,10 +97,20 @@ server.tool(
       const { overrides, modulePriority, sources } = loadOverrides(toolRoot, resolvedProjectPath);
       const indexes = buildSourceIndexes(resolvedProjectPath);
       const indexSummary = summarizeIndexes(indexes);
-      const enriched = matchAll(flat, resolvedProjectPath, overrides, {
+      let enriched = matchAll(flat, resolvedProjectPath, overrides, {
         modulePriority,
         indexes,
       });
+      const registryMatch = loadIdentifierRegistry(toolRoot, resolvedProjectPath);
+      let identifierRegistry = null;
+      if (registryMatch) {
+        const applied = applyIdentifierRegistry(enriched, registryMatch.registry);
+        enriched = applied.nodes;
+        identifierRegistry = {
+          path: registryMatch.path,
+          ...applied.stats,
+        };
+      }
 
       currentHierarchy = {
         tree,
@@ -107,6 +123,7 @@ server.tool(
           scanVersion: 2,
           indexSummary,
           overrideSources: sources,
+          identifierRegistry,
         },
       };
       saveHierarchy(currentHierarchy);
@@ -126,6 +143,11 @@ server.tool(
       ];
       if (sources.length > 0) {
         scanInfo.push(`Override sources: ${sources.join(", ")}`);
+      }
+      if (identifierRegistry) {
+        scanInfo.push(
+          `Identifier registry: applied=${identifierRegistry.applied}, ambiguous=${identifierRegistry.ambiguous}`
+        );
       }
 
       if (isFresh && !cacheMatchesProject && !rescan) {

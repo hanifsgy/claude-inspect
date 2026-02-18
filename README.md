@@ -98,6 +98,35 @@ node src/scan.js /absolute/path/to/your/app --validate
 
 This prints index strategy, module/file coverage, mapping metrics, and fails with exit code `1` if `criticalMappings` checks fail.
 
+## Identifier-first workflow
+
+For precise LLM context, generate an identifier registry first, then scan/audit.
+
+1) Build registry from source:
+
+```bash
+npm run index-identifiers -- /absolute/path/to/your/app
+```
+
+By default this writes `<project>/.claude/identifier-registry.json`.
+
+2) Scan runtime UI and apply registry matches:
+
+```bash
+npm run scan -- /absolute/path/to/your/app --validate
+```
+
+3) Generate local quality report artifacts:
+
+```bash
+npm run mapping-audit -- /absolute/path/to/your/app
+```
+
+This writes:
+
+- `artifacts/mapping-report.json`
+- `artifacts/failures.json`
+
 ## Requirements
 
 - macOS + Xcode + booted iOS Simulator

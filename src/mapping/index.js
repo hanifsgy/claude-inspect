@@ -6,4 +6,10 @@ export { SIGNAL_TYPES, SIGNAL_WEIGHTS, CONFIDENCE, createEvidence, computeConfid
 export { buildModuleIndex, ModuleIndex } from "./module-indexer.js";
 export { buildSourceIndexes, summarizeIndexes, matchNode, matchAll, setStateDir } from "./candidate-matcher.js";
 export { loadOverrides } from "./overrides.js";
+export {
+  buildIdentifierRegistry,
+  saveIdentifierRegistry,
+  loadIdentifierRegistry,
+  applyIdentifierRegistry,
+} from "./identifier-registry.js";
 export { computeMetrics, formatMetrics, explainNode, generateReport } from "./diagnostics.js";

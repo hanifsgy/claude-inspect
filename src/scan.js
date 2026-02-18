@@ -15,6 +15,8 @@ import {
   summarizeIndexes,
   matchAll,
   loadOverrides,
+  loadIdentifierRegistry,
+  applyIdentifierRegistry,
   setStateDir,
   computeMetrics,
   formatMetrics,
@@ -73,10 +75,22 @@ const { overrides, modulePriority, criticalMappings, sources } = loadOverrides(
 );
 const indexes = buildSourceIndexes(resolvedProjectPath);
 const indexSummary = summarizeIndexes(indexes);
-const enriched = matchAll(flat, resolvedProjectPath, overrides, {
+let enriched = matchAll(flat, resolvedProjectPath, overrides, {
   modulePriority,
   indexes,
 });
+
+const registryMatch = loadIdentifierRegistry(toolRoot, resolvedProjectPath);
+let registryStats = null;
+if (registryMatch) {
+  const applied = applyIdentifierRegistry(enriched, registryMatch.registry);
+  enriched = applied.nodes;
+  registryStats = {
+    path: registryMatch.path,
+    ...applied.stats,
+  };
+}
+
 const mapped = enriched.filter((n) => n.mapped).length;
 const highConf = enriched.filter((n) => n.confidence >= 0.7).length;
 console.error(`[scan] Mapped ${mapped}/${enriched.length} elements (${highConf} high confidence)`);
@@ -86,6 +100,11 @@ console.error(
 );
 if (sources.length > 0) {
   console.error(`[scan] Override sources: ${sources.join(", ")}`);
+}
+if (registryStats) {
+  console.error(
+    `[scan] Identifier registry applied=${registryStats.applied} ambiguous=${registryStats.ambiguous} source=${registryStats.path}`
+  );
 }
 
 // Step 4: Save full hierarchy to data/hierarchy.json
@@ -100,6 +119,7 @@ const hierarchy = {
     scanVersion: 2,
     indexSummary,
     overrideSources: sources,
+    identifierRegistry: registryStats,
   },
 };
 saveHierarchy(hierarchy);

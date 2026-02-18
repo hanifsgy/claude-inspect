@@ -37,3 +37,6 @@ state/index-cache.json
 
 # Runtime scan output
 data/hierarchy.json
+
+# Local audit artifacts
+artifacts/
