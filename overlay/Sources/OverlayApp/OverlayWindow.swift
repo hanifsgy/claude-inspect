@@ -7,6 +7,18 @@ class OverlayWindow: NSWindow {
     let tooltipView: TooltipView
 
     private var globalMouseMonitor: Any?
+    private var globalClickMonitor: Any?
+
+    var isSelectMode: Bool = false {
+        didSet {
+            overlayView.isSelectMode = isSelectMode
+            if isSelectMode {
+                startGlobalClickMonitor()
+            } else {
+                stopGlobalClickMonitor()
+            }
+        }
+    }
 
     init() {
         overlayView = OverlayView()
@@ -50,6 +62,33 @@ class OverlayWindow: NSWindow {
     private func startGlobalMouseMonitor() {
         globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
             self?.handleGlobalMouseMove()
+        }
+    }
+
+    // MARK: - Global Click Monitor (select mode only)
+
+    private func startGlobalClickMonitor() {
+        globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] _ in
+            self?.handleGlobalClick()
+        }
+    }
+
+    private func stopGlobalClickMonitor() {
+        if let monitor = globalClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalClickMonitor = nil
+        }
+    }
+
+    private func handleGlobalClick() {
+        guard isVisible else { return }
+        let mouseLocation = NSEvent.mouseLocation
+        guard frame.contains(mouseLocation) else { return }
+
+        let windowPoint = convertPoint(fromScreen: mouseLocation)
+        let localPoint = overlayView.convert(windowPoint, from: nil)
+        if let comp = overlayView.componentHitTest(overlayPoint: localPoint) {
+            overlayView.onClick?(comp)
         }
     }
 
@@ -143,9 +182,8 @@ class OverlayWindow: NSWindow {
     }
 
     deinit {
-        if let monitor = globalMouseMonitor {
-            NSEvent.removeMonitor(monitor)
-        }
+        if let monitor = globalMouseMonitor { NSEvent.removeMonitor(monitor) }
+        if let monitor = globalClickMonitor { NSEvent.removeMonitor(monitor) }
     }
 }
 

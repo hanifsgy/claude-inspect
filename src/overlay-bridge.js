@@ -1,7 +1,7 @@
-import { spawn } from "child_process";
+import { spawn, execSync } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { writeFileSync, readFileSync } from "fs";
+import { writeFileSync, readFileSync, statSync } from "fs";
 import { createInterface } from "readline";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -9,26 +9,37 @@ const ROOT = resolve(__dirname, "..");
 const OVERLAY_BIN = resolve(ROOT, "overlay", ".build", "release", "OverlayApp");
 const FRAMES_PATH = resolve(ROOT, "state", "overlay_frames.json");
 const SELECTION_PATH = resolve(ROOT, "state", "selected_component.json");
+const UNLOCK_PATH = resolve(ROOT, "state", "unlock.trigger");
 
 export class OverlayBridge {
   constructor() {
     this.process = null;
-    this._clickResolve = null;
-    this._pollTimer = null;
+    this._queue = [];    // selections buffered before waitForClick is called
+    this._waiters = []; // pending waitForClick Promises
+    this._bgTimer = null;
+    this._bgLastMod = 0;
   }
 
   /**
-   * Write frames to file and spawn overlay with the file path.
+   * Ensure the overlay is running. If already started (e.g. by the shell
+   * script), skips spawning. Always starts the background file watcher so
+   * selections are buffered even between waitForClick calls.
    */
-  start(components) {
+  start(udid = "booted") {
     if (this.process) {
-      throw new Error("Overlay already running");
+      this._startBackground();
+      return;
     }
 
-    // Write frames to file
-    writeFileSync(FRAMES_PATH, JSON.stringify(components, null, 2));
+    // Skip spawn if OverlayApp is already running (started by shell script)
+    try {
+      execSync("pgrep -x OverlayApp", { stdio: "ignore" });
+      this._startBackground();
+      return;
+    } catch {
+      // not running, fall through to spawn
+    }
 
-    // Launch overlay with frames file path
     this.process = spawn(OVERLAY_BIN, [FRAMES_PATH], {
       stdio: ["ignore", "pipe", "ignore"],
       detached: true,
@@ -36,25 +47,62 @@ export class OverlayBridge {
 
     this.process.on("exit", () => {
       this.process = null;
-      this._stopPolling();
+      this._stopBackground();
     });
 
-    // Listen for stdout events (click, etc.)
+    // stdout path (bridge-owned overlay) — delivers to queue immediately
     if (this.process.stdout) {
       const rl = createInterface({ input: this.process.stdout });
       rl.on("line", (line) => {
         let msg;
-        try {
-          msg = JSON.parse(line);
-        } catch {
-          return;
-        }
-        if (msg.event === "click" && this._clickResolve) {
-          const resolve = this._clickResolve;
-          this._clickResolve = null;
-          resolve(msg.component);
-        }
+        try { msg = JSON.parse(line); } catch { return; }
+        if (msg.event === "click") this._deliver(msg.component);
       });
+    }
+
+    this._startBackground();
+  }
+
+  /**
+   * Always-on file watcher. Runs continuously so clicks are buffered
+   * even when no waitForClick is active.
+   */
+  _startBackground() {
+    if (this._bgTimer) return;
+    try { this._bgLastMod = statSync(SELECTION_PATH).mtimeMs; } catch {}
+
+    this._bgTimer = setInterval(() => {
+      try {
+        const { mtimeMs } = statSync(SELECTION_PATH);
+        if (mtimeMs > this._bgLastMod) {
+          this._bgLastMod = mtimeMs;
+          const data = JSON.parse(readFileSync(SELECTION_PATH, "utf-8"));
+          this._deliver(data);
+        }
+      } catch {}
+    }, 300);
+  }
+
+  _stopBackground() {
+    if (this._bgTimer) {
+      clearInterval(this._bgTimer);
+      this._bgTimer = null;
+    }
+  }
+
+  /**
+   * Route a selection to the next waiter, or buffer it if no one is waiting.
+   * Also writes unlock.trigger so the overlay clears its lock state.
+   */
+  _deliver(data) {
+    try { writeFileSync(UNLOCK_PATH, ""); } catch {}
+
+    if (this._waiters.length > 0) {
+      const waiter = this._waiters.shift();
+      waiter.cleanup();
+      waiter.resolve(data);
+    } else {
+      this._queue.push(data);
     }
   }
 
@@ -66,59 +114,42 @@ export class OverlayBridge {
   }
 
   /**
-   * Wait for user to click a component.
-   * Polls state/selected_component.json as a fallback.
+   * Wait for the next component selection.
+   * Returns immediately if a selection was buffered since the last call.
    */
   waitForClick(timeoutMs = 120000) {
+    // Return buffered selection immediately
+    if (this._queue.length > 0) {
+      const data = this._queue.shift();
+      try { writeFileSync(UNLOCK_PATH, ""); } catch {}
+      return Promise.resolve(data);
+    }
+
     return new Promise((resolve, reject) => {
-      if (!this.process) {
-        return reject(new Error("Overlay not running"));
-      }
+      let timer;
+      const waiter = {
+        resolve,
+        reject,
+        cleanup: () => clearTimeout(timer),
+      };
+      this._waiters.push(waiter);
 
-      // Primary: resolve from stdout click event
-      this._clickResolve = resolve;
-
-      // Fallback: poll the selection file
-      const startTime = Date.now();
-      let lastMod = 0;
-      try {
-        const stat = require("fs").statSync(SELECTION_PATH);
-        lastMod = stat.mtimeMs;
-      } catch {}
-
-      this._pollTimer = setInterval(() => {
-        try {
-          const stat = require("fs").statSync(SELECTION_PATH);
-          if (stat.mtimeMs > lastMod) {
-            const data = JSON.parse(readFileSync(SELECTION_PATH, "utf-8"));
-            clearInterval(this._pollTimer);
-            this._clickResolve = null;
-            resolve(data);
-          }
-        } catch {}
-      }, 500);
-
-      // Timeout
-      setTimeout(() => {
-        this._stopPolling();
-        this._clickResolve = null;
+      timer = setTimeout(() => {
+        const idx = this._waiters.indexOf(waiter);
+        if (idx !== -1) this._waiters.splice(idx, 1);
         reject(new Error("Selection timed out"));
       }, timeoutMs);
     });
   }
 
   stop() {
-    this._stopPolling();
+    this._stopBackground();
+    this._waiters.forEach((w) => { w.cleanup(); w.reject(new Error("Inspector stopped")); });
+    this._waiters = [];
+    this._queue = [];
     if (this.process) {
       this.process.kill();
       this.process = null;
-    }
-  }
-
-  _stopPolling() {
-    if (this._pollTimer) {
-      clearInterval(this._pollTimer);
-      this._pollTimer = null;
     }
   }
 }

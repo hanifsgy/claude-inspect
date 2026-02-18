@@ -1,4 +1,4 @@
-Start the Simulator Inspector.
+Start the Simulator Inspector and enter a persistent inspection loop.
 
 ## Step 1: Resolve tool path
 
@@ -20,8 +20,33 @@ Call the `inspector_start` MCP tool with:
 - `projectPath`: the current working directory (absolute path)
 - `rescan`: false (the script already scanned)
 
-## Step 4: Wait for selection
+## Step 4: Inspection loop
 
+**Enter a persistent loop — keep listening until the user explicitly says to stop.**
+
+For each iteration:
+
+### 4a. Wait for selection
 Call the `wait_for_selection` MCP tool with a 120-second timeout.
 
-Display the selected component's context: class name, file:line, owner type, confidence score, and evidence chain.
+Tell the user: "Overlay is ready — click **◉ Select** then tap a component."
+
+### 4b. Auto-analyse the selected component
+Using the returned `file:line`, read the source file (±30 lines around the line). Then produce a structured analysis:
+
+1. **Identity** — class name, accessibility identifier, what kind of UI element it is
+2. **Responsibility** — what this component displays or manages
+3. **Interactions** — tap handlers, gesture recognisers, callbacks it fires and where they lead in the codebase
+4. **Wiring** — any `onTap`, `onClick`, delegate, or closure callbacks — trace them to the call site
+5. **Observations** — any missing wiring, bugs, or notable patterns (e.g. accessibility trait set but no tap handler)
+
+### 4c. Prompt for next action
+After displaying the analysis, tell the user:
+> "Tap **✕ Clear** on the overlay to select another component, or tell me what you'd like to dig into."
+
+Then **immediately call `wait_for_selection` again** (go back to 4a) without waiting for the user to re-run the skill. The bridge queues clicks made while Claude is responding, so the next call may return instantly if the user already picked something.
+
+**Only exit the loop if:**
+- The user explicitly says "stop", "done", "exit", or similar
+- `wait_for_selection` times out
+- The user asks a question that requires focus outside the inspector

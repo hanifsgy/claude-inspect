@@ -20,19 +20,79 @@
       "enabled": true,
       "children": [
         {
+          "className": "UIView",
+          "axeType": "GenericElement",
+          "role": "AXGenericElement",
+          "roleDescription": "",
+          "identifier": "home.header.logo",
+          "label": "Terminal logo",
+          "name": "home.header.logo",
+          "id": "home.header.logo",
+          "frame": {
+            "x": 16,
+            "y": 78,
+            "w": 32,
+            "h": 32
+          },
+          "value": null,
+          "help": null,
+          "enabled": true,
+          "children": []
+        },
+        {
           "className": "UILabel",
           "axeType": "Heading",
           "role": "AXHeading",
           "roleDescription": "heading",
-          "identifier": "command.header.title",
-          "label": "Command Center",
-          "name": "command.header.title",
-          "id": "command.header.title",
+          "identifier": "home.header.title",
+          "label": "Terminal",
+          "name": "home.header.title",
+          "id": "home.header.title",
           "frame": {
-            "x": 20,
-            "y": 78,
-            "w": 362,
-            "h": 28.67
+            "x": 58,
+            "y": 81,
+            "w": 88.33,
+            "h": 26.33
+          },
+          "value": null,
+          "help": null,
+          "enabled": true,
+          "children": []
+        },
+        {
+          "className": "UIButton",
+          "axeType": "Button",
+          "role": "AXButton",
+          "roleDescription": "button",
+          "identifier": "home.header.notification",
+          "label": "Notifications",
+          "name": "home.header.notification",
+          "id": "home.header.notification",
+          "frame": {
+            "x": 304,
+            "y": 76,
+            "w": 36,
+            "h": 36
+          },
+          "value": null,
+          "help": "Opens latest alerts",
+          "enabled": true,
+          "children": []
+        },
+        {
+          "className": "UIImageView",
+          "axeType": "Image",
+          "role": "AXImage",
+          "roleDescription": "image",
+          "identifier": "home.header.profile",
+          "label": "Profile",
+          "name": "home.header.profile",
+          "id": "home.header.profile",
+          "frame": {
+            "x": 350,
+            "y": 76.67,
+            "w": 36,
+            "h": 34.67
           },
           "value": null,
           "help": null,
@@ -44,34 +104,74 @@
           "axeType": "TextField",
           "role": "AXTextField",
           "roleDescription": "text field",
-          "identifier": "command.search.field",
-          "label": "Command search",
-          "name": "command.search.field",
-          "id": "command.search.field",
+          "identifier": "home.search.field",
+          "label": "Search",
+          "name": "home.search.field",
+          "id": "home.search.field",
           "frame": {
-            "x": 54,
-            "y": 120.67,
-            "w": 318,
-            "h": 44
+            "x": 52,
+            "y": 142,
+            "w": 264,
+            "h": 50
           },
-          "value": "Search commands (e.g. /chart)...",
-          "help": "Search command presets",
+          "value": "Search commands, charts, or messages...",
+          "help": "Search commands, charts, or messages",
           "enabled": true,
           "children": []
         },
         {
-          "className": "UIImageView",
-          "axeType": "Image",
-          "role": "AXImage",
-          "roleDescription": "image",
-          "identifier": "command.search.icon",
-          "label": "Search",
-          "name": "command.search.icon",
-          "id": "command.search.icon",
+          "className": "UILabel",
+          "axeType": "StaticText",
+          "role": "AXStaticText",
+          "roleDescription": "text",
+          "identifier": "home.search.shortcut.cmd",
+          "label": "Keyboard shortcut CMD",
+          "name": "home.search.shortcut.cmd",
+          "id": "home.search.shortcut.cmd",
           "frame": {
-            "x": 30,
-            "y": 135.67,
-            "w": 16,
+            "x": 324,
+            "y": 159,
+            "w": 24,
+            "h": 16
+          },
+          "value": null,
+          "help": null,
+          "enabled": true,
+          "children": []
+        },
+        {
+          "className": "UILabel",
+          "axeType": "StaticText",
+          "role": "AXStaticText",
+          "roleDescription": "text",
+          "identifier": "home.search.shortcut.k",
+          "label": "Keyboard shortcut K",
+          "name": "home.search.shortcut.k",
+          "id": "home.search.shortcut.k",
+          "frame": {
+            "x": 352,
+            "y": 159,
+            "w": 24,
+            "h": 16
+          },
+          "value": null,
+          "help": null,
+          "enabled": true,
+          "children": []
+        },
+        {
+          "className": "UILabel",
+          "axeType": "Heading",
+          "role": "AXHeading",
+          "roleDescription": "heading",
+          "identifier": "",
+          "label": "RECENT OUTPUTS",
+          "name": "RECENT OUTPUTS",
+          "id": "UILabel_RECENT OUTPUTS",
+          "frame": {
+            "x": 16,
+            "y": 214.33,
+            "w": 311,
             "h": 14.33
           },
           "value": null,
@@ -84,15 +184,35 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "command.filter.all",
-          "label": "ALL COMMANDS",
-          "name": "command.filter.all",
-          "id": "command.filter.all",
+          "identifier": "home.recent.viewAll",
+          "label": "View All >",
+          "name": "home.recent.viewAll",
+          "id": "home.recent.viewAll",
           "frame": {
-            "x": 20,
-            "y": 176.67,
-            "w": 113.67,
-            "h": 30
+            "x": 327,
+            "y": 208,
+            "w": 59,
+            "h": 27
+          },
+          "value": null,
+          "help": "Shows all recent outputs",
+          "enabled": true,
+          "children": []
+        },
+        {
+          "className": "UIButton",
+          "axeType": "Button",
+          "role": "AXButton",
+          "roleDescription": "button",
+          "identifier": "home.recent.card",
+          "label": "Q3 Revenue Projection, CHART, Generated 2m ago",
+          "name": "home.recent.card",
+          "id": "home.recent.card",
+          "frame": {
+            "x": 16,
+            "y": 251,
+            "w": 256,
+            "h": 172
           },
           "value": null,
           "help": null,
@@ -104,15 +224,15 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "command.filter.visualization",
-          "label": "VISUALIZATION",
-          "name": "command.filter.visualization",
-          "id": "command.filter.visualization",
+          "identifier": "home.recent.card",
+          "label": "Marketing Strategy 2025, PDF, Generated 1h ago",
+          "name": "home.recent.card",
+          "id": "home.recent.card",
           "frame": {
-            "x": 141.67,
-            "y": 176.67,
-            "w": 113.67,
-            "h": 30
+            "x": 284,
+            "y": 251,
+            "w": 256,
+            "h": 172
           },
           "value": null,
           "help": null,
@@ -124,35 +244,15 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "command.filter.documents",
-          "label": "DOCUMENTS",
-          "name": "command.filter.documents",
-          "id": "command.filter.documents",
+          "identifier": "home.recent.card",
+          "label": "Investor Update Deck, DECK, Generated 4h ago",
+          "name": "home.recent.card",
+          "id": "home.recent.card",
           "frame": {
-            "x": 263.33,
-            "y": 176.67,
-            "w": 113.67,
-            "h": 30
-          },
-          "value": null,
-          "help": null,
-          "enabled": true,
-          "children": []
-        },
-        {
-          "className": "UIButton",
-          "axeType": "Button",
-          "role": "AXButton",
-          "roleDescription": "button",
-          "identifier": "command.filter.analysis",
-          "label": "ANALYSIS",
-          "name": "command.filter.analysis",
-          "id": "command.filter.analysis",
-          "frame": {
-            "x": 385,
-            "y": 176.67,
-            "w": 113.67,
-            "h": 30
+            "x": 552,
+            "y": 251,
+            "w": 256,
+            "h": 172
           },
           "value": null,
           "help": null,
@@ -161,18 +261,18 @@
         },
         {
           "className": "UILabel",
-          "axeType": "StaticText",
-          "role": "AXStaticText",
-          "roleDescription": "text",
-          "identifier": "command.library.title",
-          "label": "SYSTEM LIBRARY",
-          "name": "command.library.title",
-          "id": "command.library.title",
+          "axeType": "Heading",
+          "role": "AXHeading",
+          "roleDescription": "heading",
+          "identifier": "",
+          "label": "ACTIVE THREADS",
+          "name": "ACTIVE THREADS",
+          "id": "UILabel_ACTIVE THREADS",
           "frame": {
-            "x": 20,
-            "y": 240.67,
-            "w": 362,
-            "h": 13.33
+            "x": 16,
+            "y": 439,
+            "w": 370,
+            "h": 14.33
           },
           "value": null,
           "help": null,
@@ -184,15 +284,15 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "command.library.card.0",
-          "label": "/generate-chart. Transforms raw database queries into interactive visualizations (Line, Bar, Pie, Scatter).",
-          "name": "command.library.card.0",
-          "id": "command.library.card.0",
+          "identifier": "home.thread.row",
+          "label": "Sarah Chen, Can you run the analysis on the new dataset?, 10:42 AM",
+          "name": "home.thread.row",
+          "id": "home.thread.row",
           "frame": {
-            "x": 20,
-            "y": 266,
-            "w": 362,
-            "h": 94.67
+            "x": 16,
+            "y": 469.33,
+            "w": 370,
+            "h": 74
           },
           "value": null,
           "help": null,
@@ -204,15 +304,15 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "command.library.card.1",
-          "label": "/summarize-pdf. Extract key insights and data points from uploaded PDF documents into a concise brief.",
-          "name": "command.library.card.1",
-          "id": "command.library.card.1",
+          "identifier": "home.thread.row",
+          "label": "Data Bot, Chart generated successfully., 09:15 AM",
+          "name": "home.thread.row",
+          "id": "home.thread.row",
           "frame": {
-            "x": 20,
-            "y": 372.67,
-            "w": 362,
-            "h": 94.67
+            "x": 16,
+            "y": 544.33,
+            "w": 370,
+            "h": 74
           },
           "value": null,
           "help": null,
@@ -224,35 +324,15 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "command.library.card.2",
-          "label": "/create-deck. Generates a multi-slide presentation deck based on chat context or provided datasets.",
-          "name": "command.library.card.2",
-          "id": "command.library.card.2",
+          "identifier": "home.thread.row",
+          "label": "Marcus Johnson, I've attached the Q2 report for review., Yesterday",
+          "name": "home.thread.row",
+          "id": "home.thread.row",
           "frame": {
-            "x": 20,
-            "y": 479.33,
-            "w": 362,
-            "h": 94.67
-          },
-          "value": null,
-          "help": null,
-          "enabled": true,
-          "children": []
-        },
-        {
-          "className": "UILabel",
-          "axeType": "StaticText",
-          "role": "AXStaticText",
-          "roleDescription": "text",
-          "identifier": "command.execution.title",
-          "label": "EXECUTION LOG",
-          "name": "command.execution.title",
-          "id": "command.execution.title",
-          "frame": {
-            "x": 20,
+            "x": 16,
             "y": 619.33,
-            "w": 305,
-            "h": 13.33
+            "w": 370,
+            "h": 74
           },
           "value": null,
           "help": null,
@@ -264,35 +344,15 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "command.execution.clearAll",
-          "label": "CLEAR ALL",
-          "name": "command.execution.clearAll",
-          "id": "command.execution.clearAll",
+          "identifier": "home.thread.row",
+          "label": "Elena Rodriguez, Thanks for the update!, Yesterday",
+          "name": "home.thread.row",
+          "id": "home.thread.row",
           "frame": {
-            "x": 325,
-            "y": 614,
-            "w": 57,
-            "h": 24
-          },
-          "value": null,
-          "help": "Clears all execution entries",
-          "enabled": true,
-          "children": []
-        },
-        {
-          "className": "UIButton",
-          "axeType": "Button",
-          "role": "AXButton",
-          "roleDescription": "button",
-          "identifier": "command.execution.item.0",
-          "label": "14:02:45, Success, Q3_Revenue_Comparison.png",
-          "name": "command.execution.item.0",
-          "id": "command.execution.item.0",
-          "frame": {
-            "x": 20,
-            "y": 650,
-            "w": 362,
-            "h": 88
+            "x": 16,
+            "y": 694.33,
+            "w": 370,
+            "h": 74
           },
           "value": null,
           "help": null,
@@ -304,18 +364,18 @@
           "axeType": "Button",
           "role": "AXButton",
           "roleDescription": "button",
-          "identifier": "command.execution.item.1",
-          "label": "09:15:20, Success, Project_Alpha_Summary.pdf",
-          "name": "command.execution.item.1",
-          "id": "command.execution.item.1",
+          "identifier": "home.create",
+          "label": "Create new",
+          "name": "home.create",
+          "id": "home.create",
           "frame": {
-            "x": 20,
-            "y": 750,
-            "w": 362,
-            "h": 84.33
+            "x": 328,
+            "y": 721,
+            "w": 56,
+            "h": 56
           },
           "value": null,
-          "help": null,
+          "help": "Starts a new chat or command",
           "enabled": true,
           "children": []
         },
@@ -374,66 +434,137 @@
       "mapped": false
     },
     {
-      "id": "command.header.title",
+      "id": "home.header.logo",
+      "className": "UIView",
+      "axeType": "GenericElement",
+      "name": "home.header.logo",
+      "identifier": "home.header.logo",
+      "label": "Terminal logo",
+      "frame": {
+        "x": 16,
+        "y": 78,
+        "w": 32,
+        "h": 32
+      },
+      "role": "AXGenericElement",
+      "parentId": "UIApplication_Wiki",
+      "enabled": true,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 351,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "signal": "identifier_exact",
+          "weight": 0.9,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 351,
+          "detail": "accessibilityIdentifier = \"home.header.logo\""
+        }
+      ],
+      "provenance": "auto",
+      "ambiguous": false,
+      "candidates": [
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 351,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "identifier_exact",
+              "weight": 0.9,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 351,
+              "detail": "accessibilityIdentifier = \"home.header.logo\""
+            }
+          ],
+          "confidence": 0.9
+        },
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 352,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "label_exact",
+              "weight": 0.5,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 352,
+              "detail": "Label \"Terminal logo\" found in source"
+            }
+          ],
+          "confidence": 0.5
+        }
+      ],
+      "parentClass": null,
+      "dependencies": null,
+      "hierarchy": null,
+      "mapped": true
+    },
+    {
+      "id": "home.header.title",
       "className": "UILabel",
       "axeType": "Heading",
-      "name": "command.header.title",
-      "identifier": "command.header.title",
-      "label": "Command Center",
+      "name": "home.header.title",
+      "identifier": "home.header.title",
+      "label": "Terminal",
       "frame": {
-        "x": 20,
-        "y": 78,
-        "w": 362,
-        "h": 28.67
+        "x": 58,
+        "y": 81,
+        "w": 88.33,
+        "h": 26.33
       },
       "role": "AXHeading",
       "parentId": "UIApplication_Wiki",
       "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 269,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 355,
       "ownerType": null,
-      "mappedModule": "Wiki",
+      "mappedModule": "analyze-components-tools",
       "confidence": 0.9,
       "evidence": [
         {
           "signal": "identifier_exact",
           "weight": 0.9,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 269,
-          "detail": "accessibilityIdentifier = \"command.header.title\""
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 355,
+          "detail": "accessibilityIdentifier = \"home.header.title\""
         }
       ],
       "provenance": "auto",
       "ambiguous": false,
       "candidates": [
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 269,
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 355,
           "ownerType": null,
-          "module": "Wiki",
+          "module": "analyze-components-tools",
           "evidence": [
             {
               "signal": "identifier_exact",
               "weight": 0.9,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 269,
-              "detail": "accessibilityIdentifier = \"command.header.title\""
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 355,
+              "detail": "accessibilityIdentifier = \"home.header.title\""
             }
           ],
           "confidence": 0.9
         },
         {
-          "file": "Wiki/CommandInteractor.swift",
+          "file": "Wiki/Wiki/HomeInteractor.swift",
           "line": 13,
-          "ownerType": "CommandInteractor",
-          "module": "Wiki",
+          "ownerType": "HomeInteractor",
+          "module": "analyze-components-tools",
           "evidence": [
             {
               "signal": "label_exact",
               "weight": 0.5,
-              "sourceFile": "Wiki/CommandInteractor.swift",
+              "sourceFile": "Wiki/Wiki/HomeInteractor.swift",
               "sourceLine": 13,
-              "detail": "Label \"Command Center\" found in source"
+              "detail": "Label \"Terminal\" found in source"
             }
           ],
           "confidence": 0.5
@@ -445,66 +576,66 @@
       "mapped": true
     },
     {
-      "id": "command.search.field",
-      "className": "UITextField",
-      "axeType": "TextField",
-      "name": "command.search.field",
-      "identifier": "command.search.field",
-      "label": "Command search",
+      "id": "home.header.notification",
+      "className": "UIButton",
+      "axeType": "Button",
+      "name": "home.header.notification",
+      "identifier": "home.header.notification",
+      "label": "Notifications",
       "frame": {
-        "x": 54,
-        "y": 120.67,
-        "w": 318,
-        "h": 44
+        "x": 304,
+        "y": 76,
+        "w": 36,
+        "h": 36
       },
-      "role": "AXTextField",
+      "role": "AXButton",
       "parentId": "UIApplication_Wiki",
       "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 276,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 358,
       "ownerType": null,
-      "mappedModule": "Wiki",
+      "mappedModule": "analyze-components-tools",
       "confidence": 0.9,
       "evidence": [
         {
           "signal": "identifier_exact",
           "weight": 0.9,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 276,
-          "detail": "accessibilityIdentifier = \"command.search.field\""
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 358,
+          "detail": "accessibilityIdentifier = \"home.header.notification\""
         }
       ],
       "provenance": "auto",
       "ambiguous": false,
       "candidates": [
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 276,
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 358,
           "ownerType": null,
-          "module": "Wiki",
+          "module": "analyze-components-tools",
           "evidence": [
             {
               "signal": "identifier_exact",
               "weight": 0.9,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 276,
-              "detail": "accessibilityIdentifier = \"command.search.field\""
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 358,
+              "detail": "accessibilityIdentifier = \"home.header.notification\""
             }
           ],
           "confidence": 0.9
         },
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 277,
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 359,
           "ownerType": null,
-          "module": "Wiki",
+          "module": "analyze-components-tools",
           "evidence": [
             {
               "signal": "label_exact",
               "weight": 0.5,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 277,
-              "detail": "Label \"Command search\" found in source"
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 359,
+              "detail": "Label \"Notifications\" found in source"
             }
           ],
           "confidence": 0.5
@@ -516,64 +647,183 @@
       "mapped": true
     },
     {
-      "id": "command.search.icon",
+      "id": "home.header.profile",
       "className": "UIImageView",
       "axeType": "Image",
-      "name": "command.search.icon",
-      "identifier": "command.search.icon",
-      "label": "Search",
+      "name": "home.header.profile",
+      "identifier": "home.header.profile",
+      "label": "Profile",
       "frame": {
-        "x": 30,
-        "y": 135.67,
-        "w": 16,
-        "h": 14.33
+        "x": 350,
+        "y": 76.67,
+        "w": 36,
+        "h": 34.67
       },
       "role": "AXImage",
       "parentId": "UIApplication_Wiki",
       "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 274,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 363,
       "ownerType": null,
-      "mappedModule": "Wiki",
+      "mappedModule": "analyze-components-tools",
       "confidence": 0.9,
       "evidence": [
         {
           "signal": "identifier_exact",
           "weight": 0.9,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 274,
-          "detail": "accessibilityIdentifier = \"command.search.icon\""
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 363,
+          "detail": "accessibilityIdentifier = \"home.header.profile\""
         }
       ],
       "provenance": "auto",
       "ambiguous": false,
       "candidates": [
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 274,
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 363,
           "ownerType": null,
-          "module": "Wiki",
+          "module": "analyze-components-tools",
           "evidence": [
             {
               "signal": "identifier_exact",
               "weight": 0.9,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 274,
-              "detail": "accessibilityIdentifier = \"command.search.icon\""
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 363,
+              "detail": "accessibilityIdentifier = \"home.header.profile\""
             }
           ],
           "confidence": 0.9
         },
         {
-          "file": "Wiki/HomeView.swift",
-          "line": 450,
+          "file": "Wiki/Wiki/CommandView.swift",
+          "line": 738,
           "ownerType": null,
-          "module": "Wiki",
+          "module": "analyze-components-tools",
           "evidence": [
             {
               "signal": "label_exact",
               "weight": 0.5,
-              "sourceFile": "Wiki/HomeView.swift",
+              "sourceFile": "Wiki/Wiki/CommandView.swift",
+              "sourceLine": 738,
+              "detail": "Label \"Profile\" found in source"
+            }
+          ],
+          "confidence": 0.5
+        },
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 364,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "label_exact",
+              "weight": 0.5,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 364,
+              "detail": "Label \"Profile\" found in source"
+            }
+          ],
+          "confidence": 0.5
+        },
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 752,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "label_exact",
+              "weight": 0.5,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 752,
+              "detail": "Label \"Profile\" found in source"
+            }
+          ],
+          "confidence": 0.5
+        },
+        {
+          "file": "Wiki/Wiki/MainTabBarController.swift",
+          "line": 43,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "label_exact",
+              "weight": 0.5,
+              "sourceFile": "Wiki/Wiki/MainTabBarController.swift",
+              "sourceLine": 43,
+              "detail": "Label \"Profile\" found in source"
+            }
+          ],
+          "confidence": 0.5
+        }
+      ],
+      "parentClass": null,
+      "dependencies": null,
+      "hierarchy": null,
+      "mapped": true
+    },
+    {
+      "id": "home.search.field",
+      "className": "UITextField",
+      "axeType": "TextField",
+      "name": "home.search.field",
+      "identifier": "home.search.field",
+      "label": "Search",
+      "frame": {
+        "x": 52,
+        "y": 142,
+        "w": 264,
+        "h": 50
+      },
+      "role": "AXTextField",
+      "parentId": "UIApplication_Wiki",
+      "enabled": true,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 449,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "signal": "identifier_exact",
+          "weight": 0.9,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 449,
+          "detail": "accessibilityIdentifier = \"home.search.field\""
+        }
+      ],
+      "provenance": "auto",
+      "ambiguous": false,
+      "candidates": [
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 449,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "identifier_exact",
+              "weight": 0.9,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 449,
+              "detail": "accessibilityIdentifier = \"home.search.field\""
+            }
+          ],
+          "confidence": 0.9
+        },
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 450,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "label_exact",
+              "weight": 0.5,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
               "sourceLine": 450,
               "detail": "Label \"Search\" found in source"
             }
@@ -587,350 +837,160 @@
       "mapped": true
     },
     {
-      "id": "command.filter.all",
-      "className": "UIButton",
-      "axeType": "Button",
-      "name": "command.filter.all",
-      "identifier": "command.filter.all",
-      "label": "ALL COMMANDS",
-      "frame": {
-        "x": 20,
-        "y": 176.67,
-        "w": 113.67,
-        "h": 30
-      },
-      "role": "AXButton",
-      "parentId": "UIApplication_Wiki",
-      "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 317,
-      "ownerType": null,
-      "mappedModule": "Wiki",
-      "confidence": 0.6,
-      "evidence": [
-        {
-          "signal": "identifier_prefix",
-          "weight": 0.6,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 317,
-          "detail": "Pattern \"command.filter.\\(filter.category.rawValue)\" matches prefix \"command.filter.\""
-        }
-      ],
-      "provenance": "auto",
-      "ambiguous": true,
-      "candidates": [
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 317,
-          "ownerType": null,
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 317,
-              "detail": "Pattern \"command.filter.\\(filter.category.rawValue)\" matches prefix \"command.filter.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandInteractor.swift",
-          "line": 16,
-          "ownerType": "CommandInteractor",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "label_exact",
-              "weight": 0.5,
-              "sourceFile": "Wiki/CommandInteractor.swift",
-              "sourceLine": 16,
-              "detail": "Label \"ALL COMMANDS\" found in source"
-            }
-          ],
-          "confidence": 0.5
-        }
-      ],
-      "parentClass": null,
-      "dependencies": null,
-      "hierarchy": null,
-      "mapped": true
-    },
-    {
-      "id": "command.filter.visualization",
-      "className": "UIButton",
-      "axeType": "Button",
-      "name": "command.filter.visualization",
-      "identifier": "command.filter.visualization",
-      "label": "VISUALIZATION",
-      "frame": {
-        "x": 141.67,
-        "y": 176.67,
-        "w": 113.67,
-        "h": 30
-      },
-      "role": "AXButton",
-      "parentId": "UIApplication_Wiki",
-      "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 317,
-      "ownerType": null,
-      "mappedModule": "Wiki",
-      "confidence": 0.6,
-      "evidence": [
-        {
-          "signal": "identifier_prefix",
-          "weight": 0.6,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 317,
-          "detail": "Pattern \"command.filter.\\(filter.category.rawValue)\" matches prefix \"command.filter.\""
-        }
-      ],
-      "provenance": "auto",
-      "ambiguous": true,
-      "candidates": [
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 317,
-          "ownerType": null,
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 317,
-              "detail": "Pattern \"command.filter.\\(filter.category.rawValue)\" matches prefix \"command.filter.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandInteractor.swift",
-          "line": 17,
-          "ownerType": "CommandInteractor",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "label_exact",
-              "weight": 0.5,
-              "sourceFile": "Wiki/CommandInteractor.swift",
-              "sourceLine": 17,
-              "detail": "Label \"VISUALIZATION\" found in source"
-            }
-          ],
-          "confidence": 0.5
-        }
-      ],
-      "parentClass": null,
-      "dependencies": null,
-      "hierarchy": null,
-      "mapped": true
-    },
-    {
-      "id": "command.filter.documents",
-      "className": "UIButton",
-      "axeType": "Button",
-      "name": "command.filter.documents",
-      "identifier": "command.filter.documents",
-      "label": "DOCUMENTS",
-      "frame": {
-        "x": 263.33,
-        "y": 176.67,
-        "w": 113.67,
-        "h": 30
-      },
-      "role": "AXButton",
-      "parentId": "UIApplication_Wiki",
-      "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 317,
-      "ownerType": null,
-      "mappedModule": "Wiki",
-      "confidence": 0.6,
-      "evidence": [
-        {
-          "signal": "identifier_prefix",
-          "weight": 0.6,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 317,
-          "detail": "Pattern \"command.filter.\\(filter.category.rawValue)\" matches prefix \"command.filter.\""
-        }
-      ],
-      "provenance": "auto",
-      "ambiguous": true,
-      "candidates": [
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 317,
-          "ownerType": null,
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 317,
-              "detail": "Pattern \"command.filter.\\(filter.category.rawValue)\" matches prefix \"command.filter.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandInteractor.swift",
-          "line": 18,
-          "ownerType": "CommandInteractor",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "label_exact",
-              "weight": 0.5,
-              "sourceFile": "Wiki/CommandInteractor.swift",
-              "sourceLine": 18,
-              "detail": "Label \"DOCUMENTS\" found in source"
-            }
-          ],
-          "confidence": 0.5
-        }
-      ],
-      "parentClass": null,
-      "dependencies": null,
-      "hierarchy": null,
-      "mapped": true
-    },
-    {
-      "id": "command.filter.analysis",
-      "className": "UIButton",
-      "axeType": "Button",
-      "name": "command.filter.analysis",
-      "identifier": "command.filter.analysis",
-      "label": "ANALYSIS",
-      "frame": {
-        "x": 385,
-        "y": 176.67,
-        "w": 113.67,
-        "h": 30
-      },
-      "role": "AXButton",
-      "parentId": "UIApplication_Wiki",
-      "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 317,
-      "ownerType": null,
-      "mappedModule": "Wiki",
-      "confidence": 0.6,
-      "evidence": [
-        {
-          "signal": "identifier_prefix",
-          "weight": 0.6,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 317,
-          "detail": "Pattern \"command.filter.\\(filter.category.rawValue)\" matches prefix \"command.filter.\""
-        }
-      ],
-      "provenance": "auto",
-      "ambiguous": true,
-      "candidates": [
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 317,
-          "ownerType": null,
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 317,
-              "detail": "Pattern \"command.filter.\\(filter.category.rawValue)\" matches prefix \"command.filter.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandInteractor.swift",
-          "line": 19,
-          "ownerType": "CommandInteractor",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "label_exact",
-              "weight": 0.5,
-              "sourceFile": "Wiki/CommandInteractor.swift",
-              "sourceLine": 19,
-              "detail": "Label \"ANALYSIS\" found in source"
-            }
-          ],
-          "confidence": 0.5
-        }
-      ],
-      "parentClass": null,
-      "dependencies": null,
-      "hierarchy": null,
-      "mapped": true
-    },
-    {
-      "id": "command.library.title",
+      "id": "home.search.shortcut.cmd",
       "className": "UILabel",
       "axeType": "StaticText",
-      "name": "command.library.title",
-      "identifier": "command.library.title",
-      "label": "SYSTEM LIBRARY",
+      "name": "home.search.shortcut.cmd",
+      "identifier": "home.search.shortcut.cmd",
+      "label": "Keyboard shortcut CMD",
       "frame": {
-        "x": 20,
-        "y": 240.67,
-        "w": 362,
-        "h": 13.33
+        "x": 324,
+        "y": 159,
+        "w": 24,
+        "h": 16
       },
       "role": "AXStaticText",
       "parentId": "UIApplication_Wiki",
       "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 285,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 469,
       "ownerType": null,
-      "mappedModule": "Wiki",
-      "confidence": 0.9,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.6,
       "evidence": [
         {
-          "signal": "identifier_exact",
-          "weight": 0.9,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 285,
-          "detail": "accessibilityIdentifier = \"command.library.title\""
+          "signal": "identifier_prefix",
+          "weight": 0.6,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 469,
+          "detail": "Pattern \"home.search.shortcut.\\(text.lowercased())\" matches prefix \"home.search.shortcut.\""
         }
       ],
       "provenance": "auto",
       "ambiguous": false,
       "candidates": [
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 285,
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 469,
           "ownerType": null,
-          "module": "Wiki",
+          "module": "analyze-components-tools",
           "evidence": [
             {
-              "signal": "identifier_exact",
-              "weight": 0.9,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 285,
-              "detail": "accessibilityIdentifier = \"command.library.title\""
+              "signal": "identifier_prefix",
+              "weight": 0.6,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 469,
+              "detail": "Pattern \"home.search.shortcut.\\(text.lowercased())\" matches prefix \"home.search.shortcut.\""
             }
           ],
-          "confidence": 0.9
-        },
+          "confidence": 0.6
+        }
+      ],
+      "parentClass": null,
+      "dependencies": null,
+      "hierarchy": null,
+      "mapped": true
+    },
+    {
+      "id": "home.search.shortcut.k",
+      "className": "UILabel",
+      "axeType": "StaticText",
+      "name": "home.search.shortcut.k",
+      "identifier": "home.search.shortcut.k",
+      "label": "Keyboard shortcut K",
+      "frame": {
+        "x": 352,
+        "y": 159,
+        "w": 24,
+        "h": 16
+      },
+      "role": "AXStaticText",
+      "parentId": "UIApplication_Wiki",
+      "enabled": true,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 469,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.6,
+      "evidence": [
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 117,
+          "signal": "identifier_prefix",
+          "weight": 0.6,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 469,
+          "detail": "Pattern \"home.search.shortcut.\\(text.lowercased())\" matches prefix \"home.search.shortcut.\""
+        }
+      ],
+      "provenance": "auto",
+      "ambiguous": false,
+      "candidates": [
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 469,
           "ownerType": null,
-          "module": "Wiki",
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "identifier_prefix",
+              "weight": 0.6,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 469,
+              "detail": "Pattern \"home.search.shortcut.\\(text.lowercased())\" matches prefix \"home.search.shortcut.\""
+            }
+          ],
+          "confidence": 0.6
+        }
+      ],
+      "parentClass": null,
+      "dependencies": null,
+      "hierarchy": null,
+      "mapped": true
+    },
+    {
+      "id": "UILabel_RECENT OUTPUTS",
+      "className": "UILabel",
+      "axeType": "Heading",
+      "name": "RECENT OUTPUTS",
+      "identifier": "",
+      "label": "RECENT OUTPUTS",
+      "frame": {
+        "x": 16,
+        "y": 214.33,
+        "w": 311,
+        "h": 14.33
+      },
+      "role": "AXHeading",
+      "parentId": "UIApplication_Wiki",
+      "enabled": true,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 91,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.5,
+      "evidence": [
+        {
+          "signal": "label_exact",
+          "weight": 0.5,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 91,
+          "detail": "Label \"RECENT OUTPUTS\" found in source"
+        }
+      ],
+      "provenance": "auto",
+      "ambiguous": false,
+      "candidates": [
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 91,
+          "ownerType": null,
+          "module": "analyze-components-tools",
           "evidence": [
             {
               "signal": "label_exact",
               "weight": 0.5,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 117,
-              "detail": "Label \"SYSTEM LIBRARY\" found in source"
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 91,
+              "detail": "Label \"RECENT OUTPUTS\" found in source"
             }
           ],
           "confidence": 0.5
@@ -942,117 +1002,69 @@
       "mapped": true
     },
     {
-      "id": "command.library.card.0",
+      "id": "home.recent.viewAll",
       "className": "UIButton",
       "axeType": "Button",
-      "name": "command.library.card.0",
-      "identifier": "command.library.card.0",
-      "label": "/generate-chart. Transforms raw database queries into interactive visualizations (Line, Bar, Pie, Scatter).",
+      "name": "home.recent.viewAll",
+      "identifier": "home.recent.viewAll",
+      "label": "View All >",
       "frame": {
-        "x": 20,
-        "y": 266,
-        "w": 362,
-        "h": 94.67
+        "x": 327,
+        "y": 208,
+        "w": 59,
+        "h": 27
       },
       "role": "AXButton",
       "parentId": "UIApplication_Wiki",
       "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 404,
-      "ownerType": "CommandLibraryCardView",
-      "mappedModule": "Wiki",
-      "confidence": 0.6,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 191,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.9,
       "evidence": [
         {
-          "signal": "identifier_prefix",
-          "weight": 0.6,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 404,
-          "detail": "Pattern \"command.library.card.\\(index)\" matches prefix \"command.library.card.\""
+          "signal": "identifier_exact",
+          "weight": 0.9,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 191,
+          "detail": "accessibilityIdentifier = \"home.recent.viewAll\""
         }
       ],
       "provenance": "auto",
-      "ambiguous": true,
+      "ambiguous": false,
       "candidates": [
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 404,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 191,
+          "ownerType": null,
+          "module": "analyze-components-tools",
           "evidence": [
             {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 404,
-              "detail": "Pattern \"command.library.card.\\(index)\" matches prefix \"command.library.card.\""
+              "signal": "identifier_exact",
+              "weight": 0.9,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 191,
+              "detail": "accessibilityIdentifier = \"home.recent.viewAll\""
             }
           ],
-          "confidence": 0.6
+          "confidence": 0.9
         },
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 405,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 95,
+          "ownerType": null,
+          "module": "analyze-components-tools",
           "evidence": [
             {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 405,
-              "detail": "Pattern \"command.library.card.\\(index).iconContainer\" matches prefix \"command.library.card.\""
+              "signal": "label_exact",
+              "weight": 0.5,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 95,
+              "detail": "Label \"View All >\" found in source"
             }
           ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 406,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 406,
-              "detail": "Pattern \"command.library.card.\\(index).icon\" matches prefix \"command.library.card.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 407,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 407,
-              "detail": "Pattern \"command.library.card.\\(index).name\" matches prefix \"command.library.card.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 408,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 408,
-              "detail": "Pattern \"command.library.card.\\(index).info\" matches prefix \"command.library.card.\""
-            }
-          ],
-          "confidence": 0.6
+          "confidence": 0.5
         }
       ],
       "parentClass": null,
@@ -1061,117 +1073,53 @@
       "mapped": true
     },
     {
-      "id": "command.library.card.1",
+      "id": "home.recent.card",
       "className": "UIButton",
       "axeType": "Button",
-      "name": "command.library.card.1",
-      "identifier": "command.library.card.1",
-      "label": "/summarize-pdf. Extract key insights and data points from uploaded PDF documents into a concise brief.",
+      "name": "home.recent.card",
+      "identifier": "home.recent.card",
+      "label": "Q3 Revenue Projection, CHART, Generated 2m ago",
       "frame": {
-        "x": 20,
-        "y": 372.67,
-        "w": 362,
-        "h": 94.67
+        "x": 16,
+        "y": 251,
+        "w": 256,
+        "h": 172
       },
       "role": "AXButton",
       "parentId": "UIApplication_Wiki",
       "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 404,
-      "ownerType": "CommandLibraryCardView",
-      "mappedModule": "Wiki",
-      "confidence": 0.6,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 559,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.9,
       "evidence": [
         {
-          "signal": "identifier_prefix",
-          "weight": 0.6,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 404,
-          "detail": "Pattern \"command.library.card.\\(index)\" matches prefix \"command.library.card.\""
+          "signal": "identifier_exact",
+          "weight": 0.9,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 559,
+          "detail": "accessibilityIdentifier = \"home.recent.card\""
         }
       ],
       "provenance": "auto",
-      "ambiguous": true,
+      "ambiguous": false,
       "candidates": [
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 404,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 559,
+          "ownerType": null,
+          "module": "analyze-components-tools",
           "evidence": [
             {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 404,
-              "detail": "Pattern \"command.library.card.\\(index)\" matches prefix \"command.library.card.\""
+              "signal": "identifier_exact",
+              "weight": 0.9,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 559,
+              "detail": "accessibilityIdentifier = \"home.recent.card\""
             }
           ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 405,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 405,
-              "detail": "Pattern \"command.library.card.\\(index).iconContainer\" matches prefix \"command.library.card.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 406,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 406,
-              "detail": "Pattern \"command.library.card.\\(index).icon\" matches prefix \"command.library.card.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 407,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 407,
-              "detail": "Pattern \"command.library.card.\\(index).name\" matches prefix \"command.library.card.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 408,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 408,
-              "detail": "Pattern \"command.library.card.\\(index).info\" matches prefix \"command.library.card.\""
-            }
-          ],
-          "confidence": 0.6
+          "confidence": 0.9
         }
       ],
       "parentClass": null,
@@ -1180,117 +1128,53 @@
       "mapped": true
     },
     {
-      "id": "command.library.card.2",
+      "id": "home.recent.card",
       "className": "UIButton",
       "axeType": "Button",
-      "name": "command.library.card.2",
-      "identifier": "command.library.card.2",
-      "label": "/create-deck. Generates a multi-slide presentation deck based on chat context or provided datasets.",
+      "name": "home.recent.card",
+      "identifier": "home.recent.card",
+      "label": "Marketing Strategy 2025, PDF, Generated 1h ago",
       "frame": {
-        "x": 20,
-        "y": 479.33,
-        "w": 362,
-        "h": 94.67
+        "x": 284,
+        "y": 251,
+        "w": 256,
+        "h": 172
       },
       "role": "AXButton",
       "parentId": "UIApplication_Wiki",
       "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 404,
-      "ownerType": "CommandLibraryCardView",
-      "mappedModule": "Wiki",
-      "confidence": 0.6,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 559,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.9,
       "evidence": [
         {
-          "signal": "identifier_prefix",
-          "weight": 0.6,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 404,
-          "detail": "Pattern \"command.library.card.\\(index)\" matches prefix \"command.library.card.\""
+          "signal": "identifier_exact",
+          "weight": 0.9,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 559,
+          "detail": "accessibilityIdentifier = \"home.recent.card\""
         }
       ],
       "provenance": "auto",
-      "ambiguous": true,
+      "ambiguous": false,
       "candidates": [
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 404,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 559,
+          "ownerType": null,
+          "module": "analyze-components-tools",
           "evidence": [
             {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 404,
-              "detail": "Pattern \"command.library.card.\\(index)\" matches prefix \"command.library.card.\""
+              "signal": "identifier_exact",
+              "weight": 0.9,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 559,
+              "detail": "accessibilityIdentifier = \"home.recent.card\""
             }
           ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 405,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 405,
-              "detail": "Pattern \"command.library.card.\\(index).iconContainer\" matches prefix \"command.library.card.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 406,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 406,
-              "detail": "Pattern \"command.library.card.\\(index).icon\" matches prefix \"command.library.card.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 407,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 407,
-              "detail": "Pattern \"command.library.card.\\(index).name\" matches prefix \"command.library.card.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 408,
-          "ownerType": "CommandLibraryCardView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 408,
-              "detail": "Pattern \"command.library.card.\\(index).info\" matches prefix \"command.library.card.\""
-            }
-          ],
-          "confidence": 0.6
+          "confidence": 0.9
         }
       ],
       "parentClass": null,
@@ -1299,69 +1183,273 @@
       "mapped": true
     },
     {
-      "id": "command.execution.title",
+      "id": "home.recent.card",
+      "className": "UIButton",
+      "axeType": "Button",
+      "name": "home.recent.card",
+      "identifier": "home.recent.card",
+      "label": "Investor Update Deck, DECK, Generated 4h ago",
+      "frame": {
+        "x": 552,
+        "y": 251,
+        "w": 256,
+        "h": 172
+      },
+      "role": "AXButton",
+      "parentId": "UIApplication_Wiki",
+      "enabled": true,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 559,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "signal": "identifier_exact",
+          "weight": 0.9,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 559,
+          "detail": "accessibilityIdentifier = \"home.recent.card\""
+        }
+      ],
+      "provenance": "auto",
+      "ambiguous": false,
+      "candidates": [
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 559,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "identifier_exact",
+              "weight": 0.9,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 559,
+              "detail": "accessibilityIdentifier = \"home.recent.card\""
+            }
+          ],
+          "confidence": 0.9
+        }
+      ],
+      "parentClass": null,
+      "dependencies": null,
+      "hierarchy": null,
+      "mapped": true
+    },
+    {
+      "id": "UILabel_ACTIVE THREADS",
       "className": "UILabel",
-      "axeType": "StaticText",
-      "name": "command.execution.title",
-      "identifier": "command.execution.title",
-      "label": "EXECUTION LOG",
+      "axeType": "Heading",
+      "name": "ACTIVE THREADS",
+      "identifier": "",
+      "label": "ACTIVE THREADS",
       "frame": {
-        "x": 20,
+        "x": 16,
+        "y": 439,
+        "w": 370,
+        "h": 14.33
+      },
+      "role": "AXHeading",
+      "parentId": "UIApplication_Wiki",
+      "enabled": true,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 103,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.5,
+      "evidence": [
+        {
+          "signal": "label_exact",
+          "weight": 0.5,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 103,
+          "detail": "Label \"ACTIVE THREADS\" found in source"
+        }
+      ],
+      "provenance": "auto",
+      "ambiguous": false,
+      "candidates": [
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 103,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "label_exact",
+              "weight": 0.5,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 103,
+              "detail": "Label \"ACTIVE THREADS\" found in source"
+            }
+          ],
+          "confidence": 0.5
+        }
+      ],
+      "parentClass": null,
+      "dependencies": null,
+      "hierarchy": null,
+      "mapped": true
+    },
+    {
+      "id": "home.thread.row",
+      "className": "UIButton",
+      "axeType": "Button",
+      "name": "home.thread.row",
+      "identifier": "home.thread.row",
+      "label": "Sarah Chen, Can you run the analysis on the new dataset?, 10:42 AM",
+      "frame": {
+        "x": 16,
+        "y": 469.33,
+        "w": 370,
+        "h": 74
+      },
+      "role": "AXButton",
+      "parentId": "UIApplication_Wiki",
+      "enabled": true,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 676,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "signal": "identifier_exact",
+          "weight": 0.9,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 676,
+          "detail": "accessibilityIdentifier = \"home.thread.row\""
+        }
+      ],
+      "provenance": "auto",
+      "ambiguous": false,
+      "candidates": [
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 676,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "identifier_exact",
+              "weight": 0.9,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 676,
+              "detail": "accessibilityIdentifier = \"home.thread.row\""
+            }
+          ],
+          "confidence": 0.9
+        }
+      ],
+      "parentClass": null,
+      "dependencies": null,
+      "hierarchy": null,
+      "mapped": true
+    },
+    {
+      "id": "home.thread.row",
+      "className": "UIButton",
+      "axeType": "Button",
+      "name": "home.thread.row",
+      "identifier": "home.thread.row",
+      "label": "Data Bot, Chart generated successfully., 09:15 AM",
+      "frame": {
+        "x": 16,
+        "y": 544.33,
+        "w": 370,
+        "h": 74
+      },
+      "role": "AXButton",
+      "parentId": "UIApplication_Wiki",
+      "enabled": true,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 676,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "signal": "identifier_exact",
+          "weight": 0.9,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 676,
+          "detail": "accessibilityIdentifier = \"home.thread.row\""
+        }
+      ],
+      "provenance": "auto",
+      "ambiguous": false,
+      "candidates": [
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 676,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "identifier_exact",
+              "weight": 0.9,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 676,
+              "detail": "accessibilityIdentifier = \"home.thread.row\""
+            }
+          ],
+          "confidence": 0.9
+        }
+      ],
+      "parentClass": null,
+      "dependencies": null,
+      "hierarchy": null,
+      "mapped": true
+    },
+    {
+      "id": "home.thread.row",
+      "className": "UIButton",
+      "axeType": "Button",
+      "name": "home.thread.row",
+      "identifier": "home.thread.row",
+      "label": "Marcus Johnson, I've attached the Q2 report for review., Yesterday",
+      "frame": {
+        "x": 16,
         "y": 619.33,
-        "w": 305,
-        "h": 13.33
+        "w": 370,
+        "h": 74
       },
-      "role": "AXStaticText",
+      "role": "AXButton",
       "parentId": "UIApplication_Wiki",
       "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 287,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 676,
       "ownerType": null,
-      "mappedModule": "Wiki",
+      "mappedModule": "analyze-components-tools",
       "confidence": 0.9,
       "evidence": [
         {
           "signal": "identifier_exact",
           "weight": 0.9,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 287,
-          "detail": "accessibilityIdentifier = \"command.execution.title\""
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 676,
+          "detail": "accessibilityIdentifier = \"home.thread.row\""
         }
       ],
       "provenance": "auto",
       "ambiguous": false,
       "candidates": [
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 287,
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 676,
           "ownerType": null,
-          "module": "Wiki",
+          "module": "analyze-components-tools",
           "evidence": [
             {
               "signal": "identifier_exact",
               "weight": 0.9,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 287,
-              "detail": "accessibilityIdentifier = \"command.execution.title\""
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 676,
+              "detail": "accessibilityIdentifier = \"home.thread.row\""
             }
           ],
           "confidence": 0.9
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 131,
-          "ownerType": null,
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "label_exact",
-              "weight": 0.5,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 131,
-              "detail": "Label \"EXECUTION LOG\" found in source"
-            }
-          ],
-          "confidence": 0.5
         }
       ],
       "parentClass": null,
@@ -1370,307 +1458,124 @@
       "mapped": true
     },
     {
-      "id": "command.execution.clearAll",
+      "id": "home.thread.row",
       "className": "UIButton",
       "axeType": "Button",
-      "name": "command.execution.clearAll",
-      "identifier": "command.execution.clearAll",
-      "label": "CLEAR ALL",
+      "name": "home.thread.row",
+      "identifier": "home.thread.row",
+      "label": "Elena Rodriguez, Thanks for the update!, Yesterday",
       "frame": {
-        "x": 325,
-        "y": 614,
-        "w": 57,
-        "h": 24
+        "x": 16,
+        "y": 694.33,
+        "w": 370,
+        "h": 74
       },
       "role": "AXButton",
       "parentId": "UIApplication_Wiki",
       "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 288,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 676,
       "ownerType": null,
-      "mappedModule": "Wiki",
+      "mappedModule": "analyze-components-tools",
       "confidence": 0.9,
       "evidence": [
         {
           "signal": "identifier_exact",
           "weight": 0.9,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 288,
-          "detail": "accessibilityIdentifier = \"command.execution.clearAll\""
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 676,
+          "detail": "accessibilityIdentifier = \"home.thread.row\""
         }
       ],
       "provenance": "auto",
       "ambiguous": false,
       "candidates": [
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 288,
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 676,
           "ownerType": null,
-          "module": "Wiki",
+          "module": "analyze-components-tools",
           "evidence": [
             {
               "signal": "identifier_exact",
               "weight": 0.9,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 288,
-              "detail": "accessibilityIdentifier = \"command.execution.clearAll\""
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 676,
+              "detail": "accessibilityIdentifier = \"home.thread.row\""
+            }
+          ],
+          "confidence": 0.9
+        }
+      ],
+      "parentClass": null,
+      "dependencies": null,
+      "hierarchy": null,
+      "mapped": true
+    },
+    {
+      "id": "home.create",
+      "className": "UIButton",
+      "axeType": "Button",
+      "name": "home.create",
+      "identifier": "home.create",
+      "label": "Create new",
+      "frame": {
+        "x": 328,
+        "y": 721,
+        "w": 56,
+        "h": 56
+      },
+      "role": "AXButton",
+      "parentId": "UIApplication_Wiki",
+      "enabled": true,
+      "file": "Wiki/Wiki/HomeView.swift",
+      "fileLine": 194,
+      "ownerType": null,
+      "mappedModule": "analyze-components-tools",
+      "confidence": 0.9,
+      "evidence": [
+        {
+          "signal": "identifier_exact",
+          "weight": 0.9,
+          "sourceFile": "Wiki/Wiki/HomeView.swift",
+          "sourceLine": 194,
+          "detail": "accessibilityIdentifier = \"home.create\""
+        }
+      ],
+      "provenance": "auto",
+      "ambiguous": false,
+      "candidates": [
+        {
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 194,
+          "ownerType": null,
+          "module": "analyze-components-tools",
+          "evidence": [
+            {
+              "signal": "identifier_exact",
+              "weight": 0.9,
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 194,
+              "detail": "accessibilityIdentifier = \"home.create\""
             }
           ],
           "confidence": 0.9
         },
         {
-          "file": "Wiki/CommandView.swift",
-          "line": 135,
+          "file": "Wiki/Wiki/HomeView.swift",
+          "line": 195,
           "ownerType": null,
-          "module": "Wiki",
+          "module": "analyze-components-tools",
           "evidence": [
             {
               "signal": "label_exact",
               "weight": 0.5,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 135,
-              "detail": "Label \"CLEAR ALL\" found in source"
+              "sourceFile": "Wiki/Wiki/HomeView.swift",
+              "sourceLine": 195,
+              "detail": "Label \"Create new\" found in source"
             }
           ],
           "confidence": 0.5
-        }
-      ],
-      "parentClass": null,
-      "dependencies": null,
-      "hierarchy": null,
-      "mapped": true
-    },
-    {
-      "id": "command.execution.item.0",
-      "className": "UIButton",
-      "axeType": "Button",
-      "name": "command.execution.item.0",
-      "identifier": "command.execution.item.0",
-      "label": "14:02:45, Success, Q3_Revenue_Comparison.png",
-      "frame": {
-        "x": 20,
-        "y": 650,
-        "w": 362,
-        "h": 88
-      },
-      "role": "AXButton",
-      "parentId": "UIApplication_Wiki",
-      "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 539,
-      "ownerType": "CommandExecutionLogItemView",
-      "mappedModule": "Wiki",
-      "confidence": 0.6,
-      "evidence": [
-        {
-          "signal": "identifier_prefix",
-          "weight": 0.6,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 539,
-          "detail": "Pattern \"command.execution.item.\\(index).action.\\(action.rawValue)\" matches prefix \"command.execution.item.\""
-        }
-      ],
-      "provenance": "auto",
-      "ambiguous": true,
-      "candidates": [
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 539,
-          "ownerType": "CommandExecutionLogItemView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 539,
-              "detail": "Pattern \"command.execution.item.\\(index).action.\\(action.rawValue)\" matches prefix \"command.execution.item.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 545,
-          "ownerType": "CommandExecutionLogItemView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 545,
-              "detail": "Pattern \"command.execution.item.\\(index)\" matches prefix \"command.execution.item.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 546,
-          "ownerType": "CommandExecutionLogItemView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 546,
-              "detail": "Pattern \"command.execution.item.\\(index).dot\" matches prefix \"command.execution.item.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 547,
-          "ownerType": "CommandExecutionLogItemView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 547,
-              "detail": "Pattern \"command.execution.item.\\(index).line\" matches prefix \"command.execution.item.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 548,
-          "ownerType": "CommandExecutionLogItemView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 548,
-              "detail": "Pattern \"command.execution.item.\\(index).time\" matches prefix \"command.execution.item.\""
-            }
-          ],
-          "confidence": 0.6
-        }
-      ],
-      "parentClass": null,
-      "dependencies": null,
-      "hierarchy": null,
-      "mapped": true
-    },
-    {
-      "id": "command.execution.item.1",
-      "className": "UIButton",
-      "axeType": "Button",
-      "name": "command.execution.item.1",
-      "identifier": "command.execution.item.1",
-      "label": "09:15:20, Success, Project_Alpha_Summary.pdf",
-      "frame": {
-        "x": 20,
-        "y": 750,
-        "w": 362,
-        "h": 84.33
-      },
-      "role": "AXButton",
-      "parentId": "UIApplication_Wiki",
-      "enabled": true,
-      "file": "Wiki/CommandView.swift",
-      "fileLine": 539,
-      "ownerType": "CommandExecutionLogItemView",
-      "mappedModule": "Wiki",
-      "confidence": 0.6,
-      "evidence": [
-        {
-          "signal": "identifier_prefix",
-          "weight": 0.6,
-          "sourceFile": "Wiki/CommandView.swift",
-          "sourceLine": 539,
-          "detail": "Pattern \"command.execution.item.\\(index).action.\\(action.rawValue)\" matches prefix \"command.execution.item.\""
-        }
-      ],
-      "provenance": "auto",
-      "ambiguous": true,
-      "candidates": [
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 539,
-          "ownerType": "CommandExecutionLogItemView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 539,
-              "detail": "Pattern \"command.execution.item.\\(index).action.\\(action.rawValue)\" matches prefix \"command.execution.item.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 545,
-          "ownerType": "CommandExecutionLogItemView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 545,
-              "detail": "Pattern \"command.execution.item.\\(index)\" matches prefix \"command.execution.item.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 546,
-          "ownerType": "CommandExecutionLogItemView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 546,
-              "detail": "Pattern \"command.execution.item.\\(index).dot\" matches prefix \"command.execution.item.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 547,
-          "ownerType": "CommandExecutionLogItemView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 547,
-              "detail": "Pattern \"command.execution.item.\\(index).line\" matches prefix \"command.execution.item.\""
-            }
-          ],
-          "confidence": 0.6
-        },
-        {
-          "file": "Wiki/CommandView.swift",
-          "line": 548,
-          "ownerType": "CommandExecutionLogItemView",
-          "module": "Wiki",
-          "evidence": [
-            {
-              "signal": "identifier_prefix",
-              "weight": 0.6,
-              "sourceFile": "Wiki/CommandView.swift",
-              "sourceLine": 548,
-              "detail": "Pattern \"command.execution.item.\\(index).time\" matches prefix \"command.execution.item.\""
-            }
-          ],
-          "confidence": 0.6
         }
       ],
       "parentClass": null,
@@ -1694,16 +1599,16 @@
       "role": "AXGroup",
       "parentId": "UIApplication_Wiki",
       "enabled": true,
-      "file": "Wiki/MainTabBarController.swift",
+      "file": "Wiki/Wiki/MainTabBarController.swift",
       "fileLine": 60,
       "ownerType": null,
-      "mappedModule": "Wiki",
+      "mappedModule": "analyze-components-tools",
       "confidence": 0.9,
       "evidence": [
         {
           "signal": "identifier_exact",
           "weight": 0.9,
-          "sourceFile": "Wiki/MainTabBarController.swift",
+          "sourceFile": "Wiki/Wiki/MainTabBarController.swift",
           "sourceLine": 60,
           "detail": "accessibilityIdentifier = \"main.tabbar\""
         }
@@ -1712,15 +1617,15 @@
       "ambiguous": false,
       "candidates": [
         {
-          "file": "Wiki/MainTabBarController.swift",
+          "file": "Wiki/Wiki/MainTabBarController.swift",
           "line": 60,
           "ownerType": null,
-          "module": "Wiki",
+          "module": "analyze-components-tools",
           "evidence": [
             {
               "signal": "identifier_exact",
               "weight": 0.9,
-              "sourceFile": "Wiki/MainTabBarController.swift",
+              "sourceFile": "Wiki/Wiki/MainTabBarController.swift",
               "sourceLine": 60,
               "detail": "accessibilityIdentifier = \"main.tabbar\""
             }
@@ -1734,5 +1639,5 @@
       "mapped": true
     }
   ],
-  "timestamp": 1771374447411
+  "timestamp": 1771384466402
 }

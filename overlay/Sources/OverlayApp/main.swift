@@ -31,14 +31,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.statusBarWindow.orderOut(nil)
         }
 
-        // Wire overlay click → emit + save
+        // Wire overlay click → emit + save + lock
         overlayWindow.overlayView.onClick = { [weak self] (component: ComponentData) in
             guard let self = self else { return }
             emitEvent(OutgoingEvent(event: "click", component: component))
             self.overlayWindow.saveSelection(component)
+            // Lock: stop capturing more clicks, freeze overlay on selected component
+            self.overlayWindow.isSelectMode = false
+            self.overlayWindow.overlayView.lockedComponent = component
+            self.overlayWindow.overlayView.hoveredComponent = nil
+            self.statusBarWindow.statusBar.updateLocked(component)
         }
 
-        // Wire status bar buttons
+        // Wire status bar buttons — three-state toggle
+        statusBarWindow.statusBar.onToggleMode = { [weak self] in
+            guard let self = self else { return }
+            if self.overlayWindow.overlayView.lockedComponent != nil {
+                // Locked → clear lock, then auto-enter Select so user can
+                // immediately click the next component (bridges the gap between
+                // Claude processing and the user continuing to inspect)
+                self.overlayWindow.overlayView.lockedComponent = nil
+                self.overlayWindow.overlayView.hoveredComponent = nil
+                self.statusBarWindow.statusBar.updateLocked(nil)
+                self.overlayWindow.isSelectMode = true
+                self.statusBarWindow.statusBar.updateMode(true)
+            } else {
+                // Navigate ↔ Selecting
+                self.overlayWindow.isSelectMode.toggle()
+                self.statusBarWindow.statusBar.updateMode(self.overlayWindow.isSelectMode)
+            }
+        }
+
         statusBarWindow.statusBar.onRefresh = { [weak self] in
             self?.requestRescan()
             self?.reloadFrames()
@@ -58,6 +81,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // Watch for file changes (re-scan updates overlay live)
             watchFile(path) { [weak self] (data: OverlayData) in
                 self?.applyData(data)
+            }
+
+            // Watch for unlock trigger written by MCP after wait_for_selection resolves
+            let stateDir = (path as NSString).deletingLastPathComponent
+            let unlockPath = (stateDir as NSString).appendingPathComponent("unlock.trigger")
+            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+                guard let self = self else { return }
+                guard FileManager.default.fileExists(atPath: unlockPath) else { return }
+                try? FileManager.default.removeItem(atPath: unlockPath)
+                self.overlayWindow.overlayView.lockedComponent = nil
+                self.overlayWindow.overlayView.hoveredComponent = nil
+                self.statusBarWindow.statusBar.updateLocked(nil)
             }
         }
 

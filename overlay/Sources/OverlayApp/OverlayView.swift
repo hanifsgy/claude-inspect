@@ -25,6 +25,15 @@ class OverlayView: NSView {
         didSet { needsDisplay = true }
     }
 
+    var isSelectMode: Bool = false {
+        didSet { needsDisplay = true }
+    }
+
+    /// Set after a click — freezes the overlay on this component until cleared.
+    var lockedComponent: ComponentData? {
+        didSet { needsDisplay = true }
+    }
+
     var onHover: ((ComponentData?, NSPoint) -> Void)?
     var onClick: ((ComponentData) -> Void)?
 
@@ -90,20 +99,37 @@ class OverlayView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
-        let normalColor = NSColor(red: 0.29, green: 0.56, blue: 0.85, alpha: 0.5)
-        let hoverColor = NSColor(red: 0.40, green: 0.70, blue: 1.0, alpha: 1.0)
-        let hoverFill = NSColor(red: 0.40, green: 0.70, blue: 1.0, alpha: 0.08)
+        let isLocked = lockedComponent != nil
+
+        let normalColor: NSColor
+        let hoverColor: NSColor
+        let hoverFill: NSColor
+
+        if isLocked {
+            // Dim everything so the locked component stands out
+            normalColor = NSColor(red: 0.29, green: 0.56, blue: 0.85, alpha: 0.18)
+            hoverColor  = normalColor
+            hoverFill   = .clear
+        } else if isSelectMode {
+            normalColor = NSColor(red: 0.95, green: 0.60, blue: 0.10, alpha: 0.6)
+            hoverColor  = NSColor(red: 1.0,  green: 0.75, blue: 0.20, alpha: 1.0)
+            hoverFill   = NSColor(red: 1.0,  green: 0.75, blue: 0.20, alpha: 0.10)
+        } else {
+            normalColor = NSColor(red: 0.29, green: 0.56, blue: 0.85, alpha: 0.5)
+            hoverColor  = NSColor(red: 0.40, green: 0.70, blue: 1.0,  alpha: 1.0)
+            hoverFill   = NSColor(red: 0.40, green: 0.70, blue: 1.0,  alpha: 0.08)
+        }
 
         for component in components {
+            guard component.id != lockedComponent?.id else { continue } // drawn last
             let rect = iosToOverlay(component.frame)
             guard rect.width > 0, rect.height > 0 else { continue }
 
-            let isHovered = hoveredComponent?.id == component.id
+            let isHovered = !isLocked && hoveredComponent?.id == component.id
 
             if isHovered {
                 hoverFill.setFill()
                 NSBezierPath(rect: rect).fill()
-
                 hoverColor.setStroke()
                 let path = NSBezierPath(rect: rect)
                 path.lineWidth = 2.0
@@ -112,6 +138,19 @@ class OverlayView: NSView {
                 normalColor.setStroke()
                 let path = NSBezierPath(rect: rect)
                 path.lineWidth = 1.0
+                path.stroke()
+            }
+        }
+
+        // Draw locked component on top — green glow
+        if let locked = lockedComponent {
+            let rect = iosToOverlay(locked.frame)
+            if rect.width > 0, rect.height > 0 {
+                NSColor(red: 0.20, green: 0.80, blue: 0.35, alpha: 0.12).setFill()
+                NSBezierPath(rect: rect).fill()
+                let path = NSBezierPath(rect: rect)
+                path.lineWidth = 2.5
+                NSColor(red: 0.20, green: 0.80, blue: 0.35, alpha: 1.0).setStroke()
                 path.stroke()
             }
         }
@@ -139,6 +178,7 @@ class OverlayView: NSView {
 
     /// Update hover state from a window point (called by global mouse monitor)
     func updateHover(windowPoint: NSPoint) {
+        guard lockedComponent == nil else { return } // frozen while locked
         let localPoint = convert(windowPoint, from: nil)
         let component = componentHitTest(overlayPoint: localPoint)
         hoveredComponent = component
@@ -146,6 +186,8 @@ class OverlayView: NSView {
     }
 
     // MARK: - Mouse (selection mode only, triggered by parent window)
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { return true }
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)

@@ -3,9 +3,11 @@ import AppKit
 class StatusBarView: NSView {
     var onRefresh: (() -> Void)?
     var onClose: (() -> Void)?
+    var onToggleMode: (() -> Void)?
 
     private let statusDot = NSView()
     private let statusLabel = NSTextField(labelWithString: "Claude Inspector Connected")
+    private let modeButton = NSButton(title: "◉ Select", target: nil, action: nil)
     private let refreshButton = NSButton(title: "⟳", target: nil, action: nil)
     private let closeButton = NSButton(title: "✕", target: nil, action: nil)
 
@@ -34,6 +36,13 @@ class StatusBarView: NSView {
         statusLabel.textColor = NSColor(white: 0.85, alpha: 1.0)
         addSubview(statusLabel)
 
+        // Mode toggle button
+        modeButton.bezelStyle = .rounded
+        modeButton.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+        modeButton.target = self
+        modeButton.action = #selector(modeToggleTapped)
+        addSubview(modeButton)
+
         // Refresh button
         refreshButton.bezelStyle = .rounded
         refreshButton.font = NSFont.systemFont(ofSize: 13, weight: .medium)
@@ -55,21 +64,45 @@ class StatusBarView: NSView {
         let padding: CGFloat = 8
 
         statusDot.frame = NSRect(x: padding, y: (h - 8) / 2, width: 8, height: 8)
-        statusLabel.frame = NSRect(x: padding + 14, y: (h - 16) / 2, width: 180, height: 16)
+        statusLabel.frame = NSRect(x: padding + 14, y: (h - 16) / 2, width: 150, height: 16)
 
         let closeW: CGFloat = 26
         let refreshW: CGFloat = 30
+        let modeW: CGFloat = 76
 
         closeButton.frame = NSRect(x: bounds.width - padding - closeW, y: (h - 22) / 2, width: closeW, height: 22)
         refreshButton.frame = NSRect(x: bounds.width - padding - closeW - 4 - refreshW, y: (h - 22) / 2, width: refreshW, height: 22)
+        modeButton.frame = NSRect(x: bounds.width - padding - closeW - 4 - refreshW - 4 - modeW, y: (h - 22) / 2, width: modeW, height: 22)
     }
 
     func updateComponentCount(_ count: Int) {
         if count > 0 {
-            statusLabel.stringValue = "Claude Inspector — \(count) components"
+            statusLabel.stringValue = "Inspector — \(count) components"
         }
     }
 
+    func updateMode(_ isSelectMode: Bool) {
+        if isSelectMode {
+            modeButton.title = "⏹ Selecting"
+            modeButton.contentTintColor = .orange
+        } else {
+            modeButton.title = "◉ Select"
+            modeButton.contentTintColor = nil
+        }
+    }
+
+    func updateLocked(_ component: ComponentData?) {
+        if let comp = component {
+            modeButton.title = "✕ Clear"
+            modeButton.contentTintColor = NSColor(red: 0.20, green: 0.80, blue: 0.35, alpha: 1.0)
+            let name = comp.name.isEmpty ? comp.className : comp.name
+            statusLabel.stringValue = name.count > 22 ? String(name.prefix(22)) + "…" : name
+        } else {
+            updateMode(false)
+        }
+    }
+
+    @objc private func modeToggleTapped() { onToggleMode?() }
     @objc private func refreshTapped() { onRefresh?() }
     @objc private func closeTapped() { onClose?() }
 }
