@@ -58,6 +58,46 @@ Then start Claude Code and run:
    - "Where does this tap callback lead?"
    - "What wiring is missing?"
 
+## Custom mapping rules
+
+You can define manual mapping rules with `inspector-map.json` in any of these locations:
+
+- `config/inspector-map.json` (tool defaults)
+- `<your-project>/config/inspector-map.json`
+- `<your-project>/.claude/inspector-map.json`
+
+Later files override earlier ones.
+
+Supported keys:
+
+- `overrides`: explicit `pattern -> file:line` mappings
+- `modulePriority`: preferred module order for tie-break/boost
+- `criticalMappings`: rules validated by `scan --validate`
+
+Example:
+
+```json
+{
+  "overrides": [
+    { "pattern": "home.header.*", "file": "Features/Home/HomeView.swift", "line": 42 }
+  ],
+  "modulePriority": ["Melodi", "SharedUI"],
+  "criticalMappings": [
+    { "pattern": "UIButton_Generate Music", "minConfidence": 0.7 }
+  ]
+}
+```
+
+## Validate mappings manually
+
+Run a standalone scan with diagnostics:
+
+```bash
+node src/scan.js /absolute/path/to/your/app --validate
+```
+
+This prints index strategy, module/file coverage, mapping metrics, and fails with exit code `1` if `criticalMappings` checks fail.
+
 ## Requirements
 
 - macOS + Xcode + booted iOS Simulator

@@ -1,9 +1,10 @@
 /**
  * Manual Override Ingestion
  *
- * Reads config/inspector-map.json for:
+ * Reads inspector-map.json from multiple locations for:
  *   - overrides[]: explicit AX identifier → file:line mappings
  *   - modulePriority[]: preferred modules when resolving ambiguous matches
+ *   - criticalMappings[]: required mapping assertions for validation mode
  *
  * File format:
  * {
@@ -21,7 +22,7 @@
  */
 
 import { readFileSync, existsSync } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
 
 /**
  * @typedef {Object} OverrideConfig
@@ -31,24 +32,64 @@ import { join } from "path";
 
 /**
  * Load overrides from the project config file.
- * Looks for config/inspector-map.json relative to the tool root.
+ * Looks for (in merge order):
+ *   1) <toolRoot>/config/inspector-map.json
+ *   2) <projectPath>/config/inspector-map.json
+ *   3) <projectPath>/.claude/inspector-map.json
  *
  * @param {string} [toolRoot] - Root of the analyze-components-tools dir
  * @returns {OverrideConfig}
  */
-export function loadOverrides(toolRoot) {
-  const configPath = join(toolRoot || process.cwd(), "config", "inspector-map.json");
+export function loadOverrides(toolRoot, projectPath) {
+  const resolvedToolRoot = toolRoot || process.cwd();
+  const resolvedProjectPath = projectPath ? resolve(projectPath) : null;
 
-  if (!existsSync(configPath)) {
-    return { overrides: [], modulePriority: [] };
+  const configPaths = [
+    join(resolvedToolRoot, "config", "inspector-map.json"),
+  ];
+
+  if (resolvedProjectPath) {
+    configPaths.push(join(resolvedProjectPath, "config", "inspector-map.json"));
+    configPaths.push(join(resolvedProjectPath, ".claude", "inspector-map.json"));
   }
+
+  const merged = {
+    overrides: [],
+    modulePriority: [],
+    criticalMappings: [],
+    sources: [],
+  };
+
+  for (const path of configPaths) {
+    const loaded = loadOverrideFile(path);
+    if (!loaded) continue;
+
+    merged.sources.push(path);
+    merged.overrides.push(...loaded.overrides);
+    if (loaded.modulePriority.length > 0) {
+      merged.modulePriority = [...loaded.modulePriority];
+    }
+    merged.criticalMappings.push(...loaded.criticalMappings);
+  }
+
+  if (merged.overrides.length > 0) {
+    console.error(
+      `[overrides] Loaded ${merged.overrides.length} manual overrides from ${merged.sources.length} file(s)`
+    );
+  }
+
+  return merged;
+}
+
+function loadOverrideFile(configPath) {
+  if (!existsSync(configPath)) return null;
 
   let raw;
   try {
     raw = JSON.parse(readFileSync(configPath, "utf-8"));
   } catch (err) {
     console.error(`[overrides] Failed to parse ${configPath}: ${err.message}`);
-    return { overrides: [], modulePriority: [] };
+    return null;
   }
 
   const overrides = (raw.overrides || []).map((entry) => ({
@@ -59,11 +100,12 @@ export function loadOverrides(toolRoot) {
     module: entry.module ?? null,
   }));
 
-  const modulePriority = raw.modulePriority || [];
+  const modulePriority = Array.isArray(raw.modulePriority) ? raw.modulePriority : [];
+  const criticalMappings = Array.isArray(raw.criticalMappings) ? raw.criticalMappings : [];
 
-  if (overrides.length > 0) {
-    console.error(`[overrides] Loaded ${overrides.length} manual overrides`);
-  }
-
-  return { overrides, modulePriority };
+  return {
+    overrides,
+    modulePriority,
+    criticalMappings,
+  };
 }

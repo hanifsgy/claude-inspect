@@ -1,6 +1,6 @@
 {
-  "$schema": "./inspector-map.schema.json",
-  "description": "Manual overrides for AX-to-source mapping. Takes precedence over auto-detection.",
+  "description": "Manual overrides for AX-to-source mapping. Project-level files can extend this config.",
   "overrides": [],
-  "modulePriority": []
+  "modulePriority": [],
+  "criticalMappings": []
 }

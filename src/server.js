@@ -2,10 +2,19 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { describeUI } from "./axe.js";
-import { matchAll, loadOverrides, setStateDir, computeMetrics, formatMetrics, explainNode } from "./mapping/index.js";
+import {
+  buildSourceIndexes,
+  summarizeIndexes,
+  matchAll,
+  loadOverrides,
+  setStateDir,
+  computeMetrics,
+  formatMetrics,
+  explainNode,
+} from "./mapping/index.js";
 import { OverlayBridge } from "./overlay-bridge.js";
 import { saveHierarchy, loadHierarchy, saveSelection, getSelection } from "./store.js";
-import { dirname, join } from "path";
+import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -39,13 +48,20 @@ server.tool(
   },
   async ({ projectPath, simulatorUdid, rescan }) => {
     try {
+      const resolvedProjectPath = resolve(projectPath);
+
       // Check if script already generated the hierarchy
       const existing = loadHierarchy();
       const isFresh = existing && (Date.now() - existing.timestamp < 60000);
+      const cacheMatchesProject = existing?.scanMeta?.projectPath === resolvedProjectPath;
 
-      if (isFresh && !rescan) {
+      if (isFresh && cacheMatchesProject && !rescan) {
         currentHierarchy = existing;
         const metrics = computeMetrics(existing.enriched);
+        const indexSummary = existing.scanMeta?.indexSummary;
+        const indexLine = indexSummary
+          ? `\nIndex: strategy=${indexSummary.strategy} modules=${indexSummary.modules} swiftFiles=${indexSummary.swiftFiles}`
+          : "";
 
         bridge.start(simulatorUdid || "booted");
         const components = existing.enriched.map((node) => ({
@@ -60,7 +76,7 @@ server.tool(
           content: [
             {
               type: "text",
-              text: `Inspector started (cached scan).\n${formatMetrics(metrics)}`,
+              text: `Inspector started (cached scan).\n${formatMetrics(metrics)}${indexLine}`,
             },
           ],
         };
@@ -72,10 +88,27 @@ server.tool(
       const { tree, flat } = describeUI(simulatorUdid);
 
       setStateDir(join(toolRoot, "state"));
-      const { overrides } = loadOverrides(toolRoot);
-      const enriched = matchAll(flat, projectPath, overrides);
+      const { overrides, modulePriority, sources } = loadOverrides(toolRoot, resolvedProjectPath);
+      const indexes = buildSourceIndexes(resolvedProjectPath);
+      const indexSummary = summarizeIndexes(indexes);
+      const enriched = matchAll(flat, resolvedProjectPath, overrides, {
+        modulePriority,
+        indexes,
+      });
 
-      currentHierarchy = { tree, enriched, timestamp: Date.now() };
+      currentHierarchy = {
+        tree,
+        enriched,
+        timestamp: Date.now(),
+        scanMeta: {
+          projectPath: resolvedProjectPath,
+          simulatorUdid: simulatorUdid || "booted",
+          rootLabel: tree?.[0]?.label || null,
+          scanVersion: 2,
+          indexSummary,
+          overrideSources: sources,
+        },
+      };
       saveHierarchy(currentHierarchy);
 
       const components = enriched.map((node) => ({
@@ -87,12 +120,25 @@ server.tool(
       bridge.highlight(components);
 
       const metrics = computeMetrics(enriched);
+      const scanInfo = [
+        `Index strategy: ${indexSummary.strategy}`,
+        `Modules: ${indexSummary.modules}, Swift files: ${indexSummary.swiftFiles}`,
+      ];
+      if (sources.length > 0) {
+        scanInfo.push(`Override sources: ${sources.join(", ")}`);
+      }
+
+      if (isFresh && !cacheMatchesProject && !rescan) {
+        console.error(
+          `[scan] Ignoring cached hierarchy for different project: ${existing?.scanMeta?.projectPath || "unknown"}`
+        );
+      }
 
       return {
         content: [
           {
             type: "text",
-            text: `Inspector started (fresh scan).\n${formatMetrics(metrics)}`,
+            text: `Inspector started (fresh scan).\n${formatMetrics(metrics)}\n${scanInfo.join("\n")}`,
           },
         ],
       };

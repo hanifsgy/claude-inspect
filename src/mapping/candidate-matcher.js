@@ -85,6 +85,23 @@ export function buildSourceIndexes(projectDir) {
   return { moduleIndex, classIndex, identifierIndex, labelIndex, projectDir };
 }
 
+export function summarizeIndexes(indexes) {
+  const moduleCount = indexes.moduleIndex.modules.size;
+  const swiftFileCount = [...indexes.moduleIndex.modules.values()].reduce(
+    (sum, mod) => sum + mod.sources.length,
+    0
+  );
+
+  return {
+    strategy: indexes.moduleIndex.strategy,
+    modules: moduleCount,
+    swiftFiles: swiftFileCount,
+    classKeys: indexes.classIndex.size,
+    identifierKeys: indexes.identifierIndex.size,
+    labelKeys: indexes.labelIndex.size,
+  };
+}
+
 function serializeMap(map) {
   const obj = {};
   for (const [key, value] of map) {
@@ -501,6 +518,38 @@ export function matchNode(axNode, indexes) {
   return candidates;
 }
 
+function applyModulePriority(candidates, modulePriority) {
+  if (!Array.isArray(modulePriority) || modulePriority.length === 0) {
+    return candidates;
+  }
+
+  return candidates.map((cand) => {
+    const idx = modulePriority.indexOf(cand.module);
+    if (idx < 0) return cand;
+
+    const alreadyHasBoost = cand.evidence.some(
+      (ev) => ev.signal === SIGNAL_TYPES.MODULE_SCOPE && ev.detail.startsWith("Module priority boost")
+    );
+    if (alreadyHasBoost) return cand;
+
+    const boostedEvidence = [
+      ...cand.evidence,
+      createEvidence(
+        SIGNAL_TYPES.MODULE_SCOPE,
+        cand.file,
+        cand.line,
+        `Module priority boost: ${cand.module} (rank ${idx + 1}/${modulePriority.length})`
+      ),
+    ];
+
+    return {
+      ...cand,
+      evidence: boostedEvidence,
+      confidence: computeConfidence(boostedEvidence),
+    };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Batch Matcher — match all AX nodes, return enriched nodes
 // ---------------------------------------------------------------------------
@@ -513,8 +562,9 @@ export function matchNode(axNode, indexes) {
  * @param {Object[]} [overrides] - Manual override entries
  * @returns {import('./contract.js').EnrichedNode[]}
  */
-export function matchAll(flatNodes, projectDir, overrides = []) {
-  const indexes = buildSourceIndexes(projectDir);
+export function matchAll(flatNodes, projectDir, overrides = [], options = {}) {
+  const { modulePriority = [], indexes: prebuiltIndexes = null } = options;
+  const indexes = prebuiltIndexes || buildSourceIndexes(projectDir);
 
   // Build override index
   const overrideIndex = buildOverrideIndex(overrides);
@@ -525,7 +575,10 @@ export function matchAll(flatNodes, projectDir, overrides = []) {
     const autoCandidates = matchNode(axNode, indexes);
 
     // Merge: overrides take priority
-    const allCandidates = [...overrideCandidates, ...autoCandidates];
+    const allCandidates = applyModulePriority(
+      [...overrideCandidates, ...autoCandidates],
+      modulePriority
+    );
 
     return createEnrichedNode(axNode, allCandidates);
   });

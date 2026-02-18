@@ -38,8 +38,16 @@ export function buildModuleIndex(projectDir) {
   for (const strategy of strategies) {
     const found = strategy(projectDir, index);
     if (found) {
-      index.strategy = strategy.name;
-      break;
+      index.buildReverseLookup();
+      if (index.fileToModule.size > 0) {
+        index.strategy = strategy.name;
+        break;
+      }
+
+      // Strategy found project structure but produced zero source files.
+      // Clear intermediate state and continue to fallback strategies.
+      index.modules.clear();
+      index.fileToModule.clear();
     }
   }
 
@@ -476,7 +484,8 @@ function resolveSourcesFromPhases(pbx, phaseIds) {
   );
   const bfRe = /([A-Fa-f0-9]{20,})\s*\/\*[^*]*\*\/\s*=\s*\{([^}]*)\}/g;
   while ((m = bfRe.exec(bfSection)) !== null) {
-    const fileRef = extractField(m[2], "fileRef");
+    const rawFileRef = extractField(m[2], "fileRef");
+    const fileRef = rawFileRef?.match(/^[A-Fa-f0-9]{20,}/)?.[0] ?? null;
     if (fileRef) buildFiles.set(m[1], fileRef);
   }
 

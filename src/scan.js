@@ -9,20 +9,34 @@
  *   data/hierarchy.json        — full enriched hierarchy
  *   stdout (JSON)              — overlay-ready format with screen dims + components
  */
-import { describeUI, flattenTree } from "./axe.js";
-import { matchAll, loadOverrides, setStateDir } from "./mapping/index.js";
+import { describeUI } from "./axe.js";
+import {
+  buildSourceIndexes,
+  summarizeIndexes,
+  matchAll,
+  loadOverrides,
+  setStateDir,
+  computeMetrics,
+  formatMetrics,
+} from "./mapping/index.js";
 import { saveHierarchy } from "./store.js";
 import { detectGeometry } from "./geometry.js";
-import { dirname, join } from "path";
+import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const projectPath = process.argv[2];
-const simulatorUdid = process.argv[3]; // optional
+const args = process.argv.slice(2);
+const flags = new Set(args.filter((arg) => arg.startsWith("--")));
+const positional = args.filter((arg) => !arg.startsWith("--"));
+
+const projectPath = positional[0];
+const simulatorUdid = positional[1]; // optional
+const resolvedProjectPath = projectPath ? resolve(projectPath) : null;
+const validateMode = flags.has("--validate");
 
 if (!projectPath) {
-  console.error("Usage: node src/scan.js <projectPath> [simulatorUdid]");
+  console.error("Usage: node src/scan.js <projectPath> [simulatorUdid] [--validate]");
   process.exit(1);
 }
 
@@ -53,16 +67,63 @@ console.error(`[scan] iOS screen: ${screen.w} x ${screen.h} points`);
 // Step 3: Load manual overrides + map AX nodes to source with confidence scoring
 const toolRoot = dirname(__dirname);
 setStateDir(join(toolRoot, "state"));
-const { overrides } = loadOverrides(toolRoot);
-const enriched = matchAll(flat, projectPath, overrides);
+const { overrides, modulePriority, criticalMappings, sources } = loadOverrides(
+  toolRoot,
+  resolvedProjectPath
+);
+const indexes = buildSourceIndexes(resolvedProjectPath);
+const indexSummary = summarizeIndexes(indexes);
+const enriched = matchAll(flat, resolvedProjectPath, overrides, {
+  modulePriority,
+  indexes,
+});
 const mapped = enriched.filter((n) => n.mapped).length;
 const highConf = enriched.filter((n) => n.confidence >= 0.7).length;
 console.error(`[scan] Mapped ${mapped}/${enriched.length} elements (${highConf} high confidence)`);
+console.error(
+  `[scan] Index strategy=${indexSummary.strategy} modules=${indexSummary.modules} swiftFiles=${indexSummary.swiftFiles} ` +
+  `identifiers=${indexSummary.identifierKeys} labels=${indexSummary.labelKeys} classes=${indexSummary.classKeys}`
+);
+if (sources.length > 0) {
+  console.error(`[scan] Override sources: ${sources.join(", ")}`);
+}
 
 // Step 4: Save full hierarchy to data/hierarchy.json
-const hierarchy = { tree, enriched, timestamp: Date.now() };
+const hierarchy = {
+  tree,
+  enriched,
+  timestamp: Date.now(),
+  scanMeta: {
+    projectPath: resolvedProjectPath,
+    simulatorUdid: simulatorUdid || "booted",
+    rootLabel: tree?.[0]?.label || null,
+    scanVersion: 2,
+    indexSummary,
+    overrideSources: sources,
+  },
+};
 saveHierarchy(hierarchy);
 console.error(`[scan] Saved hierarchy to data/hierarchy.json`);
+
+if (validateMode) {
+  const metrics = computeMetrics(enriched);
+  console.error("[scan] Validation report:");
+  console.error(formatMetrics(metrics));
+  const criticalResult = validateCriticalMappings(enriched, criticalMappings);
+  if (criticalResult.total > 0) {
+    console.error(
+      `[scan] Critical mappings: ${criticalResult.passed}/${criticalResult.total} passed`
+    );
+    for (const failure of criticalResult.failures) {
+      console.error(
+        `[scan] FAIL ${failure.pattern} min=${failure.minConfidence} reason=${failure.reason}`
+      );
+    }
+  }
+  if (criticalResult.failures.length > 0) {
+    process.exitCode = 1;
+  }
+}
 
 // Step 5: Detect simulator geometry — exact iOS content rect within macOS window
 console.error(`[scan] Detecting simulator geometry...`);
@@ -101,3 +162,53 @@ const output = {
 };
 
 console.log(JSON.stringify(output));
+
+function validateCriticalMappings(enrichedNodes, criticalMappings = []) {
+  const failures = [];
+  const rules = Array.isArray(criticalMappings) ? criticalMappings : [];
+
+  for (const rule of rules) {
+    const pattern = rule.pattern || "";
+    if (!pattern) continue;
+    const minConfidence = typeof rule.minConfidence === "number" ? rule.minConfidence : 0.7;
+
+    const matches = enrichedNodes.filter((node) => {
+      const values = [node.id, node.identifier, node.name, node.label].filter(Boolean);
+      return values.some((v) => patternMatches(pattern, v));
+    });
+
+    if (matches.length === 0) {
+      failures.push({ pattern, minConfidence, reason: "no matching nodes" });
+      continue;
+    }
+
+    const best = matches.reduce((top, node) => (node.confidence > top.confidence ? node : top), matches[0]);
+    if (best.confidence < minConfidence) {
+      failures.push({
+        pattern,
+        minConfidence,
+        reason: `best confidence ${(best.confidence * 100).toFixed(0)}% on ${best.id}`,
+      });
+    }
+  }
+
+  return {
+    total: rules.length,
+    passed: rules.length - failures.length,
+    failures,
+  };
+}
+
+function patternMatches(pattern, value) {
+  if (!pattern || !value) return false;
+  if (pattern.startsWith("/") && pattern.endsWith("/")) {
+    try {
+      return new RegExp(pattern.slice(1, -1)).test(value);
+    } catch {
+      return false;
+    }
+  }
+
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
+  return new RegExp(`^${escaped}$`).test(value);
+}
