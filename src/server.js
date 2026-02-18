@@ -13,6 +13,7 @@ import {
   computeMetrics,
   formatMetrics,
   explainNode,
+  traceInteraction,
 } from "./mapping/index.js";
 import { OverlayBridge } from "./overlay-bridge.js";
 import { saveHierarchy, loadHierarchy, saveSelection, getSelection } from "./store.js";
@@ -326,6 +327,108 @@ server.tool(
         isError: true,
       };
     }
+  }
+);
+
+// --- Tool: trace_interaction ---
+server.tool(
+  "trace_interaction",
+  "Trace likely interaction wiring for a mapped component: handlers, callbacks, and potential missing wiring.",
+  {
+    componentId: z
+      .string()
+      .optional()
+      .describe("Component ID to trace. If omitted, uses the last selected component."),
+    contextLines: z
+      .number()
+      .optional()
+      .default(24)
+      .describe("How many lines before/after mapped line to inspect (default 24)"),
+  },
+  async ({ componentId, contextLines }) => {
+    const hierarchy = currentHierarchy || loadHierarchy();
+    if (!hierarchy) {
+      return {
+        content: [{ type: "text", text: "No hierarchy available. Run inspector_start first." }],
+        isError: true,
+      };
+    }
+
+    const selected = getSelection();
+    const resolvedComponentId = componentId || selected?.id;
+    if (!resolvedComponentId) {
+      return {
+        content: [{ type: "text", text: "No component specified and no last selection found." }],
+        isError: true,
+      };
+    }
+
+    const node = hierarchy.enriched.find((n) => n.id === resolvedComponentId);
+    if (!node) {
+      return {
+        content: [{ type: "text", text: `Component \"${resolvedComponentId}\" not found in hierarchy.` }],
+        isError: true,
+      };
+    }
+
+    const projectPath = hierarchy.scanMeta?.projectPath;
+    if (!projectPath) {
+      return {
+        content: [{ type: "text", text: "Missing project path in hierarchy metadata. Re-run inspector_start." }],
+        isError: true,
+      };
+    }
+
+    const trace = traceInteraction(node, projectPath, Math.max(8, Math.min(contextLines, 80)));
+    if (!trace.ok) {
+      return {
+        content: [{ type: "text", text: `Trace failed: ${trace.error}` }],
+        isError: true,
+      };
+    }
+
+    const lines = [
+      "Identity",
+      `- Component: \`${node.id}\` (${node.className})`,
+      `- Source: \`${trace.file}:${trace.focusLine}\`${node.ownerType ? ` (${node.ownerType})` : ""}`,
+      node.identifier ? `- Identifier: \`${node.identifier}\`` : "- Identifier: unavailable",
+      "",
+      "Interactions",
+    ];
+
+    if (trace.interactionSignals.length > 0) {
+      for (const sig of trace.interactionSignals.slice(0, 8)) {
+        const handler = sig.handler ? ` -> handler \`${sig.handler}\`` : "";
+        lines.push(`- [${sig.kind}] line ${sig.line}${handler}`);
+      }
+    } else {
+      lines.push("- No direct interaction signal found in local context window");
+    }
+
+    lines.push("", "Wiring / Callback chain");
+    if (trace.handlers.length > 0) {
+      for (const handler of trace.handlers.slice(0, 6)) {
+        const calls = handler.calls.length > 0 ? handler.calls.join(", ") : "(no downstream calls detected)";
+        lines.push(`- \`${handler.name}\` at line ${handler.line} calls: ${calls}`);
+      }
+    } else {
+      lines.push("- No handler function definitions matched from local wiring signals");
+    }
+
+    lines.push("", "Observations / Gaps");
+    lines.push(`- Verdict: **${trace.verdict.status}** — ${trace.verdict.reason}`);
+
+    lines.push("", "Local source snippet");
+    lines.push("```swift");
+    for (const row of trace.snippet) {
+      const mark = row.line === trace.focusLine ? ">" : " ";
+      lines.push(`${mark}${String(row.line).padStart(4, " ")} | ${row.text}`);
+    }
+    lines.push("```");
+
+    return {
+      content: [{ type: "text", text: lines.join("\n") }],
+    };
   }
 );
 

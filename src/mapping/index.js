@@ -14,3 +14,4 @@ export {
   applyIdentifierRegistry,
 } from "./identifier-registry.js";
 export { computeMetrics, formatMetrics, explainNode, generateReport } from "./diagnostics.js";
+export { traceInteraction } from "./interaction-tracer.js";
