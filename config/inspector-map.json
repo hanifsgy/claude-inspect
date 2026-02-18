@@ -1,0 +1,6 @@
+{
+  "$schema": "./inspector-map.schema.json",
+  "description": "Manual overrides for AX-to-source mapping. Takes precedence over auto-detection.",
+  "overrides": [],
+  "modulePriority": []
+}

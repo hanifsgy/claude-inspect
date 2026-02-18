@@ -10,9 +10,13 @@
  *   stdout (JSON)              — overlay-ready format with screen dims + components
  */
 import { describeUI, flattenTree } from "./axe.js";
-import { reconcile } from "./file-mapper.js";
+import { matchAll, loadOverrides, setStateDir } from "./mapping/index.js";
 import { saveHierarchy } from "./store.js";
 import { detectGeometry } from "./geometry.js";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const projectPath = process.argv[2];
 const simulatorUdid = process.argv[3]; // optional
@@ -46,10 +50,14 @@ if (flat.length > 0) {
 }
 console.error(`[scan] iOS screen: ${screen.w} x ${screen.h} points`);
 
-// Step 3: Scan project Swift files → enrich with file:line, dependencies
-const enriched = reconcile(flat, projectPath);
+// Step 3: Load manual overrides + map AX nodes to source with confidence scoring
+const toolRoot = dirname(__dirname);
+setStateDir(join(toolRoot, "state"));
+const { overrides } = loadOverrides(toolRoot);
+const enriched = matchAll(flat, projectPath, overrides);
 const mapped = enriched.filter((n) => n.mapped).length;
-console.error(`[scan] Mapped ${mapped}/${enriched.length} elements to source files`);
+const highConf = enriched.filter((n) => n.confidence >= 0.7).length;
+console.error(`[scan] Mapped ${mapped}/${enriched.length} elements (${highConf} high confidence)`);
 
 // Step 4: Save full hierarchy to data/hierarchy.json
 const hierarchy = { tree, enriched, timestamp: Date.now() };
@@ -81,6 +89,8 @@ const components = enriched
     frame: node.frame,
     file: node.file || null,
     fileLine: node.fileLine || null,
+    ownerType: node.ownerType || null,
+    confidence: node.confidence,
   }));
 
 const output = {
