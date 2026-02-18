@@ -7,8 +7,8 @@
  * Cache location: state/index-cache.json
  */
 
-import { readFileSync, writeFileSync, statSync, existsSync } from "fs";
-import { join } from "path";
+import { readFileSync, writeFileSync, mkdirSync, statSync, existsSync } from "fs";
+import { join, dirname } from "path";
 import { createHash } from "crypto";
 
 const CACHE_FILE = "index-cache.json";
@@ -71,6 +71,7 @@ export function loadCache(stateDir, fingerprint, projectKey = null) {
 export function saveCache(stateDir, fingerprint, data, projectKey = null) {
   const cachePath = join(stateDir, CACHE_FILE);
   try {
+    mkdirSync(dirname(cachePath), { recursive: true });
     writeFileSync(
       cachePath,
       JSON.stringify({ fingerprint, projectKey, timestamp: Date.now(), data }),

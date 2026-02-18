@@ -31,6 +31,7 @@ export function buildModuleIndex(projectDir) {
   const strategies = [
     tryXcodeGen,
     trySPMPackage,
+    tryXcodeWorkspace,
     tryXcodeproj,
     tryDirectoryScan, // fallback
   ];
@@ -357,6 +358,92 @@ function trySPMPackage(projectDir, index) {
 }
 
 // ---------------------------------------------------------------------------
+// Strategy: .xcworkspace (multi-project workspace)
+// ---------------------------------------------------------------------------
+
+function tryXcodeWorkspace(projectDir, index) {
+  // Find *.xcworkspace directory at the project root (skip any inside .xcodeproj bundles)
+  let workspacePath = null;
+  try {
+    const entries = readdirSync(projectDir);
+    for (const entry of entries) {
+      if (entry.endsWith(".xcworkspace")) {
+        workspacePath = join(projectDir, entry);
+        break;
+      }
+    }
+  } catch {
+    return false;
+  }
+
+  if (!workspacePath) return false;
+
+  const contentsPath = join(workspacePath, "contents.xcworkspacedata");
+  if (!existsSync(contentsPath)) return false;
+
+  let contents;
+  try {
+    contents = readFileSync(contentsPath, "utf-8");
+  } catch {
+    return false;
+  }
+
+  // Extract <FileRef location="group:relative/path"> entries
+  const fileRefRe = /<FileRef\s+location\s*=\s*"group:([^"]+)"\s*\/?>/g;
+  let match;
+  const xcodeprojPaths = [];
+
+  while ((match = fileRefRe.exec(contents)) !== null) {
+    const ref = match[1];
+    // Only process .xcodeproj references, skip Pods
+    if (ref.endsWith(".xcodeproj") && !ref.includes("Pods")) {
+      xcodeprojPaths.push(ref);
+    }
+  }
+
+  if (xcodeprojPaths.length === 0) return false;
+
+  let totalTargets = 0;
+
+  for (const projRelPath of xcodeprojPaths) {
+    const projAbsPath = join(projectDir, projRelPath);
+    const pbxPath = join(projAbsPath, "project.pbxproj");
+
+    if (!existsSync(pbxPath)) continue;
+
+    let pbxContent;
+    try {
+      pbxContent = readFileSync(pbxPath, "utf-8");
+    } catch {
+      continue;
+    }
+
+    // The subproject root is the parent directory of the .xcodeproj
+    const subprojectRoot = dirname(projAbsPath);
+    // For workspace-relative paths, compute the relative prefix from projectDir
+    const relPrefix = relative(projectDir, subprojectRoot);
+
+    const targets = parsePbxprojTargets(pbxContent, subprojectRoot);
+
+    for (const target of targets) {
+      // Rebase source paths to be relative to the workspace root (projectDir)
+      const rebasedSources = target.sources.map((s) =>
+        relPrefix ? join(relPrefix, s) : s
+      );
+      index.addModule(
+        target.name,
+        rebasedSources,
+        target.dependencies,
+        target.type
+      );
+      totalTargets++;
+    }
+  }
+
+  return totalTargets > 0;
+}
+
+// ---------------------------------------------------------------------------
 // Strategy: .xcodeproj (pbxproj)
 // ---------------------------------------------------------------------------
 
@@ -399,6 +486,9 @@ function tryXcodeproj(projectDir, index) {
 
 function parsePbxprojTargets(pbx, projectDir) {
   const targets = [];
+
+  // Build full file-reference path map once for the whole project
+  const fileRefPathMap = buildFileRefPathMap(pbx);
 
   // Parse PBXNativeTarget blocks from the section
   const sectionStart = pbx.indexOf("/* Begin PBXNativeTarget section */");
@@ -449,7 +539,7 @@ function parsePbxprojTargets(pbx, projectDir) {
     // Strategy B: Traditional PBXSourcesBuildPhase with file references
     if (sources.length === 0) {
       const phaseIds = extractList(blockContent, "buildPhases");
-      sources = resolveSourcesFromPhases(pbx, phaseIds);
+      sources = resolveSourcesFromPhases(pbx, phaseIds, fileRefPathMap);
     }
 
     // Parse target dependencies
@@ -507,15 +597,112 @@ function resolveGroupPath(pbx, groupId) {
   return extractField(m[1], "path");
 }
 
+/**
+ * Traverse PBXGroup hierarchy to resolve fileRef IDs to full project-relative paths.
+ * Walks from the mainGroup root, accumulating directory prefixes so that
+ * "ViewController.swift" inside Sources/Feature/ becomes "Sources/Feature/ViewController.swift".
+ *
+ * @param {string} pbx - Raw pbxproj content
+ * @returns {Map<string, string>} fileRef ID → full relative path
+ */
+function buildFileRefPathMap(pbx) {
+  const pathMap = new Map();
+
+  // Find mainGroup ID from project root object
+  const rootObjMatch = pbx.match(/rootObject\s*=\s*([A-Fa-f0-9]{20,})/);
+  if (!rootObjMatch) return pathMap;
+
+  const rootObjId = rootObjMatch[1];
+  const rootBlock = extractObjectBlock(pbx, rootObjId);
+  if (!rootBlock) return pathMap;
+
+  const mainGroupId = extractField(rootBlock, "mainGroup");
+  if (!mainGroupId) return pathMap;
+
+  // Parse all PBXGroup entries into a lookup
+  const groupStart = pbx.indexOf("/* Begin PBXGroup section */");
+  const groupEnd = pbx.indexOf("/* End PBXGroup section */");
+  if (groupStart < 0 || groupEnd < 0) return pathMap;
+
+  const groupSection = pbx.slice(groupStart, groupEnd);
+  const groups = new Map(); // id → { path, children[] }
+
+  const groupRe = /([A-Fa-f0-9]{20,})\s*(?:\/\*[^*]*\*\/\s*)?=\s*\{/g;
+  let gm;
+  while ((gm = groupRe.exec(groupSection)) !== null) {
+    const blockStart = gm.index + gm[0].length;
+    const block = extractBlock(groupSection, blockStart);
+    if (!block) continue;
+
+    const path = extractField(block, "path");
+    const children = extractList(block, "children");
+    groups.set(gm[1], { path: path || null, children });
+  }
+
+  // Build a set of all known PBXFileReference IDs with their basenames
+  const fileRefStart = pbx.indexOf("/* Begin PBXFileReference section */");
+  const fileRefEnd = pbx.indexOf("/* End PBXFileReference section */");
+  const fileRefs = new Map(); // id → path (basename from PBXFileReference)
+  if (fileRefStart >= 0 && fileRefEnd >= 0) {
+    const frSection = pbx.slice(fileRefStart, fileRefEnd);
+    const frRe = /([A-Fa-f0-9]{20,})\s*\/\*[^*]*\*\/\s*=\s*\{([^}]*)\}/g;
+    let fm;
+    while ((fm = frRe.exec(frSection)) !== null) {
+      const p = extractField(fm[2], "path");
+      if (p) fileRefs.set(fm[1], p);
+    }
+  }
+
+  // DFS from mainGroup, accumulating path prefix
+  function walk(groupId, prefix) {
+    const group = groups.get(groupId);
+    if (!group) return;
+
+    const currentPath = group.path
+      ? (prefix ? prefix + "/" + group.path : group.path)
+      : prefix;
+
+    for (const childId of group.children) {
+      if (groups.has(childId)) {
+        // Child is a group — recurse
+        walk(childId, currentPath);
+      } else if (fileRefs.has(childId)) {
+        // Child is a file reference — record full path
+        const fileName = fileRefs.get(childId);
+        const fullPath = currentPath ? currentPath + "/" + fileName : fileName;
+        pathMap.set(childId, fullPath);
+      }
+    }
+  }
+
+  const mainGroupClean = mainGroupId.match(/^[A-Fa-f0-9]{20,}/)?.[0];
+  if (mainGroupClean) {
+    walk(mainGroupClean, "");
+  }
+
+  return pathMap;
+}
+
+/** Extract an object block by its ID from anywhere in the pbxproj */
+function extractObjectBlock(pbx, objectId) {
+  const re = new RegExp(objectId + "\\s*(?:\\/\\*[^*]*\\*\\/\\s*)?=\\s*\\{");
+  const m = re.exec(pbx);
+  if (!m) return null;
+  const blockStart = m.index + m[0].length;
+  return extractBlock(pbx, blockStart);
+}
+
 /** Resolve traditional PBXSourcesBuildPhase files to source paths */
-function resolveSourcesFromPhases(pbx, phaseIds) {
+function resolveSourcesFromPhases(pbx, phaseIds, fileRefPathMap = new Map()) {
   const sources = [];
 
   // Build fileRef → path map
   const fileRefs = new Map();
+  const frSectionStart = pbx.indexOf("/* Begin PBXFileReference section */");
+  const frSectionEnd = pbx.indexOf("/* End PBXFileReference section */");
   const frSection = pbx.slice(
-    pbx.indexOf("/* Begin PBXFileReference section */") || 0,
-    pbx.indexOf("/* End PBXFileReference section */") || pbx.length
+    frSectionStart >= 0 ? frSectionStart : 0,
+    frSectionEnd >= 0 ? frSectionEnd : pbx.length
   );
   const frRe = /([A-Fa-f0-9]{20,})\s*\/\*[^*]*\*\/\s*=\s*\{([^}]*)\}/g;
   let m;
@@ -526,9 +713,11 @@ function resolveSourcesFromPhases(pbx, phaseIds) {
 
   // Build buildFile → fileRef map
   const buildFiles = new Map();
+  const bfSectionStart = pbx.indexOf("/* Begin PBXBuildFile section */");
+  const bfSectionEnd = pbx.indexOf("/* End PBXBuildFile section */");
   const bfSection = pbx.slice(
-    pbx.indexOf("/* Begin PBXBuildFile section */") || 0,
-    pbx.indexOf("/* End PBXBuildFile section */") || pbx.length
+    bfSectionStart >= 0 ? bfSectionStart : 0,
+    bfSectionEnd >= 0 ? bfSectionEnd : pbx.length
   );
   const bfRe = /([A-Fa-f0-9]{20,})\s*\/\*[^*]*\*\/\s*=\s*\{([^}]*)\}/g;
   while ((m = bfRe.exec(bfSection)) !== null) {
@@ -538,9 +727,11 @@ function resolveSourcesFromPhases(pbx, phaseIds) {
   }
 
   // Find PBXSourcesBuildPhase matching our phase IDs
+  const spSectionStart = pbx.indexOf("/* Begin PBXSourcesBuildPhase section */");
+  const spSectionEnd = pbx.indexOf("/* End PBXSourcesBuildPhase section */");
   const spSection = pbx.slice(
-    pbx.indexOf("/* Begin PBXSourcesBuildPhase section */") || 0,
-    pbx.indexOf("/* End PBXSourcesBuildPhase section */") || pbx.length
+    spSectionStart >= 0 ? spSectionStart : 0,
+    spSectionEnd >= 0 ? spSectionEnd : pbx.length
   );
   for (const phaseId of phaseIds) {
     const re = new RegExp(
@@ -555,8 +746,11 @@ function resolveSourcesFromPhases(pbx, phaseIds) {
     for (const bfId of fileIds) {
       const frId = buildFiles.get(bfId);
       if (!frId) continue;
-      const path = fileRefs.get(frId);
-      if (path?.endsWith(".swift")) sources.push(path);
+      // Prefer full path from PBXGroup hierarchy; fall back to PBXFileReference basename
+      const fullPath = fileRefPathMap.get(frId);
+      const fallbackPath = fileRefs.get(frId);
+      const resolvedPath = fullPath || fallbackPath;
+      if (resolvedPath?.endsWith(".swift")) sources.push(resolvedPath);
     }
   }
 
