@@ -32,13 +32,39 @@ Call the `wait_for_selection` MCP tool with a 120-second timeout.
 Tell the user: "Overlay is ready — click **◉ Select** then tap a component."
 
 ### 4b. Auto-analyse the selected component
-Using the returned `file:line`, read the source file (±30 lines around the line). Then produce a structured analysis:
+Using the `wait_for_selection` payload, include these inputs in your analysis context before writing your answer:
+
+- Component class + name + accessibility identifier
+- Source location (`file:line`) and a code snippet (±20 lines)
+- Mapping confidence and evidence chain
+- Any alternative mapping candidates
+
+Then produce a structured analysis:
 
 1. **Identity** — class name, accessibility identifier, what kind of UI element it is
 2. **Responsibility** — what this component displays or manages
 3. **Interactions** — tap handlers, gesture recognisers, callbacks it fires and where they lead in the codebase
 4. **Wiring** — any `onTap`, `onClick`, delegate, or closure callbacks — trace them to the call site
 5. **Observations** — any missing wiring, bugs, or notable patterns (e.g. accessibility trait set but no tap handler)
+
+Use this exact response template:
+
+```
+Identity
+- ...
+
+Responsibility
+- ...
+
+Interactions
+- ...
+
+Wiring / Callback chain
+- ...
+
+Observations / Gaps
+- ...
+```
 
 ### 4c. Prompt for next action
 After displaying the analysis, tell the user:

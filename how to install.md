@@ -9,7 +9,7 @@ This is a **standalone toolkit** — it lives outside your iOS project and conne
 - `axe` CLI in your PATH (`axe describe-ui` must work)
 - Claude Code CLI
 
-## Quick setup (one command)
+## Quick setup (from an already cloned tool)
 
 From your iOS project root:
 
@@ -17,9 +17,25 @@ From your iOS project root:
 /path/to/claude-inspect/scripts/setup.sh
 ```
 
-This creates/updates `.mcp.json`, `.claude/settings.local.json`, and copies slash commands — all with correct absolute paths. Builds the overlay if needed.
+This creates/updates `.mcp.json`, `.claude/settings.local.json`, and symlinks slash commands — all with correct absolute paths. It installs npm deps, then tries to download a pre-built overlay binary from GitHub Releases (falls back to local build if unavailable).
 
 That's it. Start Claude Code and go.
+
+## From scratch (one command, no clone yet)
+
+From your iOS project root:
+
+```bash
+bash <(curl -sL https://raw.githubusercontent.com/hanifsgy/claude-inspect/main/install.sh)
+```
+
+This installer checks prerequisites, clones/updates the tool to `~/.claude-inspect`, installs npm deps, prepares the overlay, and runs setup for your current project directory.
+
+Optional health check:
+
+```bash
+/path/to/claude-inspect/scripts/setup.sh --verify
+```
 
 ## Manual setup
 
@@ -78,12 +94,15 @@ The `cwd` field must point to the claude-inspect directory.
 }
 ```
 
-### 4. Copy slash commands
+### 4. Symlink slash commands
 
 ```bash
 mkdir -p .claude/commands/infra-basic
-cp /path/to/claude-inspect/.claude/commands/infra-basic/*.md .claude/commands/infra-basic/
+ln -sf /path/to/claude-inspect/.claude/commands/infra-basic/simulator-inspector-on.md .claude/commands/infra-basic/simulator-inspector-on.md
+ln -sf /path/to/claude-inspect/.claude/commands/infra-basic/simulator-inspector-off.md .claude/commands/infra-basic/simulator-inspector-off.md
 ```
+
+Using symlinks means `git pull` in your tool directory updates slash command content for every linked project automatically.
 
 </details>
 
