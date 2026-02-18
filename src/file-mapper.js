@@ -50,9 +50,49 @@ function findSwiftFiles(dir, results = []) {
 function discoverClasses(swiftFiles) {
   const classMap = new Map();
 
-  // Match: class Foo: UIView, class Foo: UIViewController, struct Foo: View, etc.
-  const classRegex =
-    /^[ \t]*((?:public|private|internal|open|final)\s+)*(class|struct|enum)\s+(\w+)\s*(?::\s*([^{]+))?/gm;
+  const declarationRegex =
+    /^(\s*)((?:public|private|internal|open|fileprivate|final|override|static)\s+)*(actor|class|struct|enum|protocol)\s+(\w+)/;
+
+  function parseInheritance(text, name) {
+    const colonIdx = text.indexOf(":");
+    if (colonIdx < 0) return { parentClass: null, protocols: [] };
+
+    let inheritancePart = text.slice(colonIdx + 1);
+    const braceIdx = inheritancePart.indexOf("{");
+    if (braceIdx >= 0) {
+      inheritancePart = inheritancePart.slice(0, braceIdx);
+    }
+
+    const whereIdx = inheritancePart.indexOf(" where ");
+    if (whereIdx >= 0) {
+      inheritancePart = inheritancePart.slice(0, whereIdx);
+    }
+
+    const parts = inheritancePart
+      .split(",")
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (parts.length === 0) {
+      return { parentClass: null, protocols: [] };
+    }
+
+    return { parentClass: parts[0] || null, protocols: parts.slice(1) };
+  }
+
+  function collectDeclaration(lines, startIdx) {
+    let fullText = lines[startIdx];
+    let braceFound = fullText.includes("{");
+    let endIdx = startIdx;
+
+    while (!braceFound && endIdx < lines.length - 1) {
+      endIdx++;
+      fullText += " " + lines[endIdx].trim();
+      braceFound = lines[endIdx].includes("{");
+    }
+
+    return { text: fullText, endLine: endIdx + 1, hasBrace: braceFound };
+  }
 
   for (const file of swiftFiles) {
     let content;
@@ -63,32 +103,66 @@ function discoverClasses(swiftFiles) {
     }
 
     const lines = content.split("\n");
-    let match;
-    classRegex.lastIndex = 0;
+    const typeStack = [];
+    let braceDepth = 0;
 
-    while ((match = classRegex.exec(content)) !== null) {
-      const type = match[2]; // class, struct, enum
-      const name = match[3];
-      const inheritance = match[4] ? match[4].trim() : "";
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lineNum = i + 1;
 
-      // Find the line number
-      const beforeMatch = content.slice(0, match.index);
-      const line = beforeMatch.split("\n").length;
+      const match = line.match(declarationRegex);
+      if (match) {
+        const indent = match[1] || "";
+        const typeKind = match[4];
+        const name = match[5];
 
-      // Extract parent classes/protocols
-      const parents = inheritance
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
+        const expectedDepth = Math.floor(indent.length / 4);
+        while (typeStack.length > expectedDepth) {
+          typeStack.pop();
+        }
 
-      classMap.set(name, {
-        file,
-        line,
-        type,
-        parentClass: parents[0] || null,
-        protocols: parents.slice(1),
-        inheritance,
-      });
+        const { text: fullDecl, hasBrace } = collectDeclaration(lines, i);
+        const { parentClass, protocols } = parseInheritance(fullDecl, name);
+
+        const fullName = typeStack.length > 0
+          ? `${typeStack[typeStack.length - 1].name}.${name}`
+          : name;
+
+        classMap.set(fullName, {
+          file,
+          line: lineNum,
+          type: typeKind,
+          parentClass,
+          protocols,
+          nestingPath: typeStack.map(t => t.name),
+          isObjc: /@objc(?:\(|\s|$)/.test(line),
+          isObjcMembers: /@objcMembers/.test(line),
+        });
+
+        classMap.set(name, {
+          file,
+          line: lineNum,
+          type: typeKind,
+          parentClass,
+          protocols,
+          isObjc: /@objc(?:\(|\s|$)/.test(line),
+          isObjcMembers: /@objcMembers/.test(line),
+        });
+
+        if (hasBrace) {
+          typeStack.push({ name: fullName, line: lineNum, depth: braceDepth });
+        }
+      }
+
+      for (const ch of line) {
+        if (ch === "{") braceDepth++;
+        else if (ch === "}") {
+          braceDepth--;
+          if (typeStack.length > 0 && braceDepth <= typeStack[typeStack.length - 1].depth) {
+            typeStack.pop();
+          }
+        }
+      }
     }
   }
 

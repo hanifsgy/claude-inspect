@@ -137,8 +137,90 @@ function buildClassIndex(swiftFiles, projectDir) {
   /** @type {Map<string, ClassEntry[]>} className → entries (may have duplicates across modules) */
   const index = new Map();
 
-  const classRegex =
-    /^[ \t]*((?:public|private|internal|open|final)\s+)*(class|struct|enum)\s+(\w+)\s*(?::\s*([^{]+))?/gm;
+  const declarationRegex =
+    /^(\s*)((?:public|private|internal|open|fileprivate|final|override|static|mutating|nonmutating|async)\s+)*(actor|class|struct|enum|protocol)\s+(\w+)/;
+
+  const extensionRegex =
+    /^(\s*)extension\s+(\w+)(?:\s*:\s*([^{]+))?(?:\s*where\s+([^{]+))?\s*\{?/;
+
+  function parseInheritance(text, name) {
+    const colonIdx = text.indexOf(":");
+    if (colonIdx < 0) return { parentClass: null, protocols: [] };
+
+    let inheritancePart = text.slice(colonIdx + 1);
+    const braceIdx = inheritancePart.indexOf("{");
+    if (braceIdx >= 0) {
+      inheritancePart = inheritancePart.slice(0, braceIdx);
+    }
+
+    const whereIdx = inheritancePart.indexOf(" where ");
+    if (whereIdx >= 0) {
+      inheritancePart = inheritancePart.slice(0, whereIdx);
+    }
+
+    const parts = inheritancePart
+      .split(",")
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (parts.length === 0) {
+      return { parentClass: null, protocols: [] };
+    }
+
+    const parentClass = parts[0] || null;
+    const protocols = parts.slice(1);
+
+    return { parentClass, protocols };
+  }
+
+  function collectDeclaration(lines, startIdx) {
+    let fullText = lines[startIdx];
+    let braceFound = fullText.includes("{");
+    let endIdx = startIdx;
+
+    while (!braceFound && endIdx < lines.length - 1) {
+      endIdx++;
+      fullText += " " + lines[endIdx].trim();
+      braceFound = lines[endIdx].includes("{");
+    }
+
+    return { text: fullText, endLine: endIdx + 1, hasBrace: braceFound };
+  }
+
+  function collectAssociatedTypes(lines, startLine, startBraceDepth) {
+    const associatedTypes = [];
+    const associatedTypeRegex = /^\s*associatedtype\s+(\w+)(?:\s*:\s*([^\s{]+))?/;
+    let depth = startBraceDepth;
+    let inProtocol = true;
+
+    for (let i = startLine; i < lines.length && inProtocol; i++) {
+      const line = lines[i];
+
+      for (const ch of line) {
+        if (ch === "{") depth++;
+        else if (ch === "}") {
+          depth--;
+          if (depth < startBraceDepth) {
+            inProtocol = false;
+            break;
+          }
+        }
+      }
+
+      if (depth > startBraceDepth) {
+        const match = line.match(associatedTypeRegex);
+        if (match) {
+          associatedTypes.push({
+            name: match[1],
+            constraint: match[2] || null,
+            line: i + 1,
+          });
+        }
+      }
+    }
+
+    return associatedTypes;
+  }
 
   for (const file of swiftFiles) {
     let content;
@@ -148,29 +230,111 @@ function buildClassIndex(swiftFiles, projectDir) {
       continue;
     }
 
-    classRegex.lastIndex = 0;
-    let match;
-    while ((match = classRegex.exec(content)) !== null) {
-      const type = match[2];
-      const name = match[3];
-      const inheritance = match[4] ? match[4].trim() : "";
-      const parents = inheritance.split(",").map((s) => s.trim()).filter(Boolean);
+    const lines = content.split("\n");
+    const typeStack = [];
+    let braceDepth = 0;
 
-      const beforeMatch = content.slice(0, match.index);
-      const line = beforeMatch.split("\n").length;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lineNum = i + 1;
 
-      const entry = {
-        name,
-        file: relative(projectDir, file),
-        line,
-        type,
-        parentClass: parents[0] || null,
-        protocols: parents.slice(1),
-      };
+      const match = line.match(declarationRegex);
+      if (match) {
+        const indent = match[1] || "";
+        const modifiers = match[2] || "";
+        const typeKind = match[4];
+        const name = match[5];
 
-      const list = index.get(name) || [];
-      list.push(entry);
-      index.set(name, list);
+        const expectedDepth = Math.floor(indent.length / 4);
+        while (typeStack.length > expectedDepth) {
+          typeStack.pop();
+        }
+
+        const { text: fullDecl, endLine, hasBrace } = collectDeclaration(lines, i);
+        const { parentClass, protocols } = parseInheritance(fullDecl, name);
+
+        const fullName = typeStack.length > 0
+          ? `${typeStack[typeStack.length - 1].name}.${name}`
+          : name;
+
+        let associatedTypes = [];
+        if (typeKind === "protocol" && hasBrace) {
+          associatedTypes = collectAssociatedTypes(lines, i, braceDepth);
+        }
+
+        const entry = {
+          name: fullName,
+          file: relative(projectDir, file),
+          line: lineNum,
+          type: typeKind,
+          parentClass,
+          protocols,
+          nestingPath: typeStack.map(t => t.name),
+          modifiers: modifiers.trim().split(/\s+/).filter(Boolean),
+          isObjc: /@objc(?:\(|\s|$)/.test(line),
+          isObjcMembers: /@objcMembers/.test(line),
+          associatedTypes: typeKind === "protocol" ? associatedTypes : undefined,
+        };
+
+        const list = index.get(fullName) || [];
+        list.push(entry);
+        index.set(fullName, list);
+
+        const simpleList = index.get(name) || [];
+        const simpleEntry = { ...entry, name };
+        simpleList.push(simpleEntry);
+        index.set(name, simpleList);
+
+        if (hasBrace) {
+          typeStack.push({ name: fullName, line: lineNum, depth: braceDepth });
+        }
+      }
+
+      const extMatch = line.match(extensionRegex);
+      if (extMatch) {
+        const extName = extMatch[2];
+        const conformances = extMatch[3] ? extMatch[3].trim() : "";
+        const whereClause = extMatch[4] ? extMatch[4].trim() : null;
+
+        if (conformances) {
+          const protocols = conformances
+            .split(",")
+            .map(s => s.trim())
+            .filter(Boolean);
+
+          const existingList = index.get(extName) || [];
+          for (const existing of existingList) {
+            for (const proto of protocols) {
+              if (!existing.protocols.includes(proto)) {
+                existing.protocols.push(proto);
+              }
+            }
+          }
+
+          if (existingList.length === 0) {
+            const extEntry = {
+              name: extName,
+              file: relative(projectDir, file),
+              line: lineNum,
+              type: "extension",
+              parentClass: null,
+              protocols,
+              whereClause,
+            };
+            index.set(extName, [extEntry]);
+          }
+        }
+      }
+
+      for (const ch of line) {
+        if (ch === "{") braceDepth++;
+        else if (ch === "}") {
+          braceDepth--;
+          if (typeStack.length > 0 && braceDepth <= typeStack[typeStack.length - 1].depth) {
+            typeStack.pop();
+          }
+        }
+      }
     }
   }
 
@@ -314,33 +478,67 @@ function buildLabelIndex(swiftFiles, projectDir) {
 // ---------------------------------------------------------------------------
 
 function detectOwnerTypes(content) {
-  const owners = []; // { name, startLine, endLine }
-  const classRegex =
-    /^[ \t]*((?:public|private|internal|open|final)\s+)*(class|struct|enum)\s+(\w+)/gm;
+  const owners = [];
+  const declarationRegex =
+    /^(\s*)((?:public|private|internal|open|fileprivate|final|override|static)\s+)*(actor|class|struct|enum|protocol)\s+(\w+)/;
 
   const lines = content.split("\n");
-  let match;
-  classRegex.lastIndex = 0;
+  const typeStack = [];
+  let braceDepth = 0;
 
-  while ((match = classRegex.exec(content)) !== null) {
-    const name = match[3];
-    const startLine = content.slice(0, match.index).split("\n").length;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lineNum = i + 1;
 
-    // Find the closing brace by tracking brace depth from the opening {
-    const afterMatch = content.slice(match.index);
-    const braceStart = afterMatch.indexOf("{");
-    if (braceStart < 0) continue;
+    const match = line.match(declarationRegex);
+    if (match) {
+      const indent = match[1] || "";
+      const name = match[5];
 
-    let depth = 1;
-    let pos = match.index + braceStart + 1;
-    while (depth > 0 && pos < content.length) {
-      if (content[pos] === "{") depth++;
-      else if (content[pos] === "}") depth--;
-      pos++;
+      const expectedDepth = Math.floor(indent.length / 4);
+      while (typeStack.length > expectedDepth) {
+        typeStack.pop();
+      }
+
+      const fullName = typeStack.length > 0
+        ? `${typeStack[typeStack.length - 1].name}.${name}`
+        : name;
+
+      owners.push({
+        name: fullName,
+        simpleName: name,
+        startLine: lineNum,
+        endLine: null,
+        depth: braceDepth,
+      });
+
+      if (line.includes("{")) {
+        typeStack.push({ name: fullName, startLine: lineNum, depth: braceDepth });
+      }
     }
 
-    const endLine = content.slice(0, pos).split("\n").length;
-    owners.push({ name, startLine, endLine });
+    const prevBraceDepth = braceDepth;
+    for (const ch of line) {
+      if (ch === "{") braceDepth++;
+      else if (ch === "}") braceDepth--;
+    }
+
+    if (braceDepth < prevBraceDepth) {
+      for (let j = owners.length - 1; j >= 0; j--) {
+        if (owners[j].endLine === null && owners[j].depth > braceDepth) {
+          owners[j].endLine = lineNum;
+        }
+      }
+      while (typeStack.length > 0 && typeStack[typeStack.length - 1].depth >= braceDepth) {
+        typeStack.pop();
+      }
+    }
+  }
+
+  for (const owner of owners) {
+    if (owner.endLine === null) {
+      owner.endLine = lines.length;
+    }
   }
 
   return owners;
