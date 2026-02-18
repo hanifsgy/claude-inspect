@@ -14,6 +14,9 @@ import {
   formatMetrics,
   explainNode,
   traceInteraction,
+  addRuntimeOverride,
+  getRuntimeOverrides,
+  persistRuntimeOverrides,
 } from "./mapping/index.js";
 import { OverlayBridge } from "./overlay-bridge.js";
 import { saveHierarchy, loadHierarchy, saveSelection, getSelection } from "./store.js";
@@ -720,6 +723,166 @@ server.tool(
 
     return {
       content: [{ type: "text", text: explainNode(node) }],
+    };
+  }
+);
+
+// --- Tool: get_related ---
+server.tool(
+  "get_related",
+  "Get parent, children, and siblings of a component in the UI hierarchy. Useful for understanding component context.",
+  {
+    componentId: z.string().describe("Component ID to find relations for"),
+  },
+  async ({ componentId }) => {
+    const hierarchy = currentHierarchy || loadHierarchy();
+
+    if (!hierarchy) {
+      return {
+        content: [{ type: "text", text: "No hierarchy available. Run inspector_start first." }],
+        isError: true,
+      };
+    }
+
+    const node = hierarchy.enriched.find((n) => n.id === componentId);
+    if (!node) {
+      return {
+        content: [{ type: "text", text: `Component "${componentId}" not found in hierarchy.` }],
+        isError: true,
+      };
+    }
+
+    const parentNode = node.parentId
+      ? hierarchy.enriched.find((n) => n.id === node.parentId)
+      : null;
+
+    const children = hierarchy.enriched.filter((n) => n.parentId === componentId);
+
+    const siblings = node.parentId
+      ? hierarchy.enriched.filter((n) => n.parentId === node.parentId && n.id !== componentId)
+      : [];
+
+    const formatNode = (n) => ({
+      id: n.id,
+      className: n.className,
+      name: n.name,
+      file: n.file,
+      fileLine: n.fileLine,
+      confidence: n.confidence,
+    });
+
+    const lines = [
+      `## Relations for ${componentId}`,
+      ``,
+      `**Component:** ${node.className} "${node.name || node.id}"`,
+    ];
+
+    if (node.file) {
+      lines.push(`**Location:** ${node.file}:${node.fileLine}`);
+    }
+
+    lines.push(``, `**Parent:**`);
+    if (parentNode) {
+      lines.push(`- ${parentNode.className} "${parentNode.name || parentNode.id}" (${parentNode.file || "no file"})`);
+    } else {
+      lines.push(`- (none - root level)`);
+    }
+
+    lines.push(``, `**Children:** ${children.length}`);
+    for (const child of children.slice(0, 10)) {
+      lines.push(`- ${child.className} "${child.name || child.id}" (${child.file || "no file"})`);
+    }
+    if (children.length > 10) {
+      lines.push(`- ... and ${children.length - 10} more`);
+    }
+
+    lines.push(``, `**Siblings:** ${siblings.length}`);
+    for (const sib of siblings.slice(0, 10)) {
+      lines.push(`- ${sib.className} "${sib.name || sib.id}" (${sib.file || "no file"})`);
+    }
+    if (siblings.length > 10) {
+      lines.push(`- ... and ${siblings.length - 10} more`);
+    }
+
+    return {
+      content: [{ type: "text", text: lines.join("\n") }],
+    };
+  }
+);
+
+// --- Tool: add_override ---
+server.tool(
+  "add_override",
+  "Add a runtime mapping override without editing JSON. Pattern supports exact match or glob (* for single level, ** for any depth).",
+  {
+    pattern: z.string().describe("AX identifier pattern (e.g., 'home.header.title' or 'home.header.*')"),
+    file: z.string().describe("Source file path relative to project root"),
+    line: z.number().optional().describe("Line number in the file"),
+    ownerType: z.string().optional().describe("Owning class/struct name"),
+    module: z.string().optional().describe("Module name"),
+    persist: z.boolean().optional().default(false).describe("Persist to .claude/inspector-map.json"),
+  },
+  async ({ pattern, file, line, ownerType, module, persist }) => {
+    const hierarchy = currentHierarchy || loadHierarchy();
+
+    const entry = addRuntimeOverride({ pattern, file, line, ownerType, module });
+
+    let persistedPath = null;
+    if (persist && hierarchy?.scanMeta?.projectPath) {
+      persistedPath = persistRuntimeOverrides(hierarchy.scanMeta.projectPath);
+    }
+
+    const lines = [
+      `## Override Added`,
+      ``,
+      `**Pattern:** ${pattern}`,
+      `**File:** ${file}${line ? `:${line}` : ""}`,
+    ];
+
+    if (ownerType) {
+      lines.push(`**Owner Type:** ${ownerType}`);
+    }
+    if (module) {
+      lines.push(`**Module:** ${module}`);
+    }
+
+    lines.push(``, `**Status:** ${persist && persistedPath ? `Persisted to ${persistedPath}` : "Runtime only (will be lost on restart)"}`);
+
+    if (hierarchy) {
+      lines.push(``, `**Note:** Run \`inspector_start --rescan\` to apply the override.`);
+    }
+
+    const runtimeCount = getRuntimeOverrides().length;
+    lines.push(``, `**Runtime overrides:** ${runtimeCount}`);
+
+    return {
+      content: [{ type: "text", text: lines.join("\n") }],
+    };
+  }
+);
+
+// --- Tool: list_overrides ---
+server.tool(
+  "list_overrides",
+  "List all runtime overrides added during this session.",
+  {},
+  async () => {
+    const overrides = getRuntimeOverrides();
+
+    if (overrides.length === 0) {
+      return {
+        content: [{ type: "text", text: "No runtime overrides. Use `add_override` to add one." }],
+      };
+    }
+
+    const lines = [`## Runtime Overrides (${overrides.length})`, ``];
+
+    for (const o of overrides) {
+      lines.push(`- \`${o.pattern}\` → ${o.file}${o.line ? `:${o.line}` : ""}`);
+    }
+
+    return {
+      content: [{ type: "text", text: lines.join("\n") }],
     };
   }
 );

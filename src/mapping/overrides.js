@@ -21,8 +21,60 @@
  *   - Glob:  "home.**"           (matches any depth)
  */
 
-import { readFileSync, existsSync } from "fs";
-import { join, resolve } from "path";
+import { readFileSync, existsSync, writeFileSync } from "fs";
+import { join, resolve, dirname } from "path";
+import { mkdirSync } from "fs";
+
+let runtimeOverrides = [];
+
+export function addRuntimeOverride(entry) {
+  const override = {
+    pattern: entry.pattern || "",
+    file: entry.file || null,
+    line: entry.line ?? null,
+    ownerType: entry.ownerType ?? null,
+    module: entry.module ?? null,
+    addedAt: Date.now(),
+  };
+  runtimeOverrides.push(override);
+  return override;
+}
+
+export function getRuntimeOverrides() {
+  return [...runtimeOverrides];
+}
+
+export function clearRuntimeOverrides() {
+  runtimeOverrides = [];
+}
+
+export function persistRuntimeOverrides(projectPath) {
+  if (runtimeOverrides.length === 0) return null;
+
+  const configDir = join(projectPath, ".claude");
+  const configPath = join(configDir, "inspector-map.json");
+
+  let existing = { overrides: [], modulePriority: [], criticalMappings: [] };
+  if (existsSync(configPath)) {
+    try {
+      existing = JSON.parse(readFileSync(configPath, "utf-8"));
+    } catch {
+      // ignore parse errors
+    }
+  }
+
+  for (const ro of runtimeOverrides) {
+    const { addedAt, ...entry } = ro;
+    if (!existing.overrides.some(o => o.pattern === entry.pattern)) {
+      existing.overrides.push(entry);
+    }
+  }
+
+  mkdirSync(configDir, { recursive: true });
+  writeFileSync(configPath, JSON.stringify(existing, null, 2));
+
+  return configPath;
+}
 
 /**
  * @typedef {Object} OverrideConfig
