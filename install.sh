@@ -103,6 +103,32 @@ clone_or_update_repo() {
     git clone "$REPO_URL" "$INSTALL_DIR"
 }
 
+reexec_using_installed_script_if_needed() {
+    if [ "${INSTALL_BOOTSTRAPPED:-0}" -eq 1 ]; then
+        return
+    fi
+
+    if [ "$0" = "$INSTALL_DIR/install.sh" ]; then
+        return
+    fi
+
+    echo "  Switching to installed script version..."
+    if [ "$INSTALL_DIR" = "$INSTALL_DIR_DEFAULT" ]; then
+        if [ "$BUILD_FROM_SOURCE" -eq 1 ]; then
+            INSTALL_BOOTSTRAPPED=1 bash "$INSTALL_DIR/install.sh" --build-from-source
+        else
+            INSTALL_BOOTSTRAPPED=1 bash "$INSTALL_DIR/install.sh"
+        fi
+    else
+        if [ "$BUILD_FROM_SOURCE" -eq 1 ]; then
+            INSTALL_BOOTSTRAPPED=1 bash "$INSTALL_DIR/install.sh" --dir "$INSTALL_DIR" --build-from-source
+        else
+            INSTALL_BOOTSTRAPPED=1 bash "$INSTALL_DIR/install.sh" --dir "$INSTALL_DIR"
+        fi
+    fi
+    exit $?
+}
+
 install_node_deps() {
     echo "[3/5] Installing npm dependencies..."
     npm install --prefix "$INSTALL_DIR"
@@ -131,6 +157,7 @@ echo ""
 
 check_prerequisites
 clone_or_update_repo
+reexec_using_installed_script_if_needed
 install_node_deps
 run_setup
 
