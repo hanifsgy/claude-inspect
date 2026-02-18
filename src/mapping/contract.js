@@ -61,6 +61,73 @@ export const SIGNAL_WEIGHTS = {
   [SIGNAL_TYPES.LABEL_FUZZY]: 0.15, // Weak — fuzzy match is unreliable
 };
 
+// Per-project learned weights (can be loaded/saved)
+let projectWeights = null;
+let projectWeightsPath = null;
+
+export function loadProjectWeights(projectPath) {
+  const fs = require("fs");
+  const path = require("path");
+  projectWeightsPath = path.join(projectPath, ".claude", "mapping-weights.json");
+  
+  try {
+    if (fs.existsSync(projectWeightsPath)) {
+      const raw = JSON.parse(fs.readFileSync(projectWeightsPath, "utf-8"));
+      projectWeights = raw.weights || {};
+      return projectWeights;
+    }
+  } catch {
+    // ignore errors
+  }
+  projectWeights = {};
+  return projectWeights;
+}
+
+export function saveProjectWeights() {
+  if (!projectWeightsPath || !projectWeights) return;
+  
+  const fs = require("fs");
+  const path = require("path");
+  
+  try {
+    const dir = path.dirname(projectWeightsPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(projectWeightsPath, JSON.stringify({
+      weights: projectWeights,
+      updatedAt: new Date().toISOString(),
+    }, null, 2));
+  } catch (err) {
+    console.error(`[weights] Failed to save: ${err.message}`);
+  }
+}
+
+export function getEffectiveWeight(signal) {
+  if (projectWeights && projectWeights[signal] !== undefined) {
+    return projectWeights[signal];
+  }
+  return SIGNAL_WEIGHTS[signal] ?? 0;
+}
+
+export function updateWeightFromFeedback(signal, correct, learningRate = 0.05) {
+  if (!projectWeights) projectWeights = {};
+  
+  const baseWeight = SIGNAL_WEIGHTS[signal] ?? 0.5;
+  const current = projectWeights[signal] ?? baseWeight;
+  
+  // Adjust weight based on feedback
+  const delta = correct ? learningRate : -learningRate;
+  const newWeight = Math.max(0.1, Math.min(1.0, current + delta));
+  
+  projectWeights[signal] = Math.round(newWeight * 100) / 100;
+  saveProjectWeights();
+  
+  return projectWeights[signal];
+}
+
+export function getProjectWeights() {
+  return projectWeights ? { ...projectWeights } : null;
+}
+
 // ---------------------------------------------------------------------------
 // Confidence Thresholds
 // ---------------------------------------------------------------------------

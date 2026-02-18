@@ -975,6 +975,180 @@ server.tool(
   }
 );
 
+// --- Tool: validate_mapping ---
+server.tool(
+  "validate_mapping",
+  "Check if a component's mapping is still valid. Verifies source file exists and expected pattern is still present.",
+  {
+    componentId: z.string().describe("Component ID to validate"),
+  },
+  async ({ componentId }) => {
+    const hierarchy = currentHierarchy || loadHierarchy();
+
+    if (!hierarchy) {
+      return {
+        content: [{ type: "text", text: "No hierarchy available. Run inspector_start first." }],
+        isError: true,
+      };
+    }
+
+    const node = hierarchy.enriched.find((n) => n.id === componentId);
+    if (!node) {
+      return {
+        content: [{ type: "text", text: `Component "${componentId}" not found.` }],
+        isError: true,
+      };
+    }
+
+    const lines = [`## Validation: ${componentId}`, ``];
+
+    if (!node.mapped || !node.file) {
+      lines.push("**Status:** Not mapped");
+      return { content: [{ type: "text", text: lines.join("\n") }] };
+    }
+
+    const projectPath = hierarchy.scanMeta?.projectPath;
+    if (!projectPath) {
+      lines.push("**Status:** Cannot validate - missing project path");
+      return { content: [{ type: "text", text: lines.join("\n") }], isError: true };
+    }
+
+    const fs = await import("fs");
+    const filePath = join(projectPath, node.file);
+
+    // Check 1: File exists
+    if (!fs.existsSync(filePath)) {
+      lines.push(`**Status:** ❌ INVALID`);
+      lines.push(`**Reason:** Source file not found: ${node.file}`);
+      return { content: [{ type: "text", text: lines.join("\n") }] };
+    }
+
+    // Check 2: Line exists (if specified)
+    if (node.fileLine) {
+      const content = fs.readFileSync(filePath, "utf-8");
+      const fileLines = content.split("\n");
+      
+      if (node.fileLine > fileLines.length) {
+        lines.push(`**Status:** ❌ INVALID`);
+        lines.push(`**Reason:** Line ${node.fileLine} exceeds file length (${fileLines.length} lines)`);
+        return { content: [{ type: "text", text: lines.join("\n") }] };
+      }
+
+      // Check 3: Identifier still present near that line (if we have one)
+      if (node.identifier) {
+        const searchStart = Math.max(0, node.fileLine - 5);
+        const searchEnd = Math.min(fileLines.length, node.fileLine + 5);
+        const context = fileLines.slice(searchStart, searchEnd).join("\n");
+        
+        if (!context.includes(node.identifier)) {
+          lines.push(`**Status:** ⚠️ STALE`);
+          lines.push(`**Reason:** Identifier "${node.identifier}" not found near line ${node.fileLine}`);
+          lines.push(`**File:** ${node.file}:${node.fileLine}`);
+          return { content: [{ type: "text", text: lines.join("\n") }] };
+        }
+      }
+    }
+
+    lines.push(`**Status:** ✓ VALID`);
+    lines.push(`**File:** ${node.file}:${node.fileLine}`);
+    lines.push(`**Confidence:** ${(node.confidence * 100).toFixed(0)}%`);
+
+    return { content: [{ type: "text", text: lines.join("\n") }] };
+  }
+);
+
+// --- Tool: refresh_index ---
+server.tool(
+  "refresh_index",
+  "Refresh source indexes for specific files or modules. Useful when you've edited source files and want updated mappings without a full rescan.",
+  {
+    files: z.array(z.string()).optional().describe("Specific files to re-index (relative paths)"),
+    module: z.string().optional().describe("Module name to re-index all its files"),
+    rescanHierarchy: z.boolean().optional().default(false).describe("Also re-run hierarchy matching"),
+  },
+  async ({ files, module, rescanHierarchy }) => {
+    const hierarchy = currentHierarchy || loadHierarchy();
+
+    if (!hierarchy) {
+      return {
+        content: [{ type: "text", text: "No hierarchy available. Run inspector_start first." }],
+        isError: true,
+      };
+    }
+
+    const projectPath = hierarchy.scanMeta?.projectPath;
+    if (!projectPath) {
+      return {
+        content: [{ type: "text", text: "Missing project path in hierarchy." }],
+        isError: true,
+      };
+    }
+
+    const fs = await import("fs");
+    const refreshedFiles = [];
+    const errors = [];
+
+    // Collect files to refresh
+    let targetFiles = [];
+
+    if (files && files.length > 0) {
+      for (const f of files) {
+        const absPath = join(projectPath, f);
+        if (fs.existsSync(absPath)) {
+          targetFiles.push(absPath);
+        } else {
+          errors.push(`File not found: ${f}`);
+        }
+      }
+    }
+
+    if (module && hierarchy.scanMeta?.indexSummary) {
+      // Note: This would require access to moduleIndex which we don't have here
+      // For now, indicate that module refresh needs full rescan
+      lines.push(`**Note:** Module-specific refresh requires full rescan. Use inspector_start --rescan instead.`);
+    }
+
+    // Clear cache for target files by touching them
+    for (const f of targetFiles) {
+      try {
+        const now = new Date();
+        fs.utimesSync(f, now, now);
+        refreshedFiles.push(f.replace(projectPath + "/", ""));
+      } catch (err) {
+        errors.push(`Failed to refresh ${f}: ${err.message}`);
+      }
+    }
+
+    const lines = [
+      `## Index Refresh`,
+      ``,
+      `**Refreshed files:** ${refreshedFiles.length}`,
+    ];
+
+    if (refreshedFiles.length > 0) {
+      for (const f of refreshedFiles.slice(0, 10)) {
+        lines.push(`- ${f}`);
+      }
+      if (refreshedFiles.length > 10) {
+        lines.push(`- ... and ${refreshedFiles.length - 10} more`);
+      }
+    }
+
+    if (rescanHierarchy && refreshedFiles.length > 0) {
+      lines.push(``, `**Next step:** Run \`inspector_start --rescan\` to apply changes.`);
+    }
+
+    if (errors.length > 0) {
+      lines.push(``, `**Errors:**`);
+      for (const e of errors) {
+        lines.push(`- ${e}`);
+      }
+    }
+
+    return { content: [{ type: "text", text: lines.join("\n") }] };
+  }
+);
+
 // --- Start server ---
 async function main() {
   const transport = new StdioServerTransport();

@@ -5,7 +5,7 @@
  * for understanding and debugging the mapping quality.
  */
 
-import { CONFIDENCE } from "./contract.js";
+import { CONFIDENCE, SIGNAL_WEIGHTS, getProjectWeights } from "./contract.js";
 
 /**
  * Compute aggregate mapping metrics from enriched nodes.
@@ -110,27 +110,54 @@ export function explainNode(node) {
     );
     lines.push(
       `  Confidence: ${(node.confidence * 100).toFixed(0)}% [${node.provenance}]` +
-        (node.ambiguous ? " ⚠ AMBIGUOUS" : "")
+        (node.ambiguous ? ` ⚠ AMBIGUOUS (score=${(node.ambiguityScore || 0).toFixed(2)})` : "")
     );
 
+    if (node.ambiguityReason) {
+      lines.push(`  Ambiguity reason: ${node.ambiguityReason}`);
+    }
+
     if (node.evidence.length > 0) {
-      lines.push("  Evidence:");
-      for (const ev of node.evidence) {
-        lines.push(`    [${ev.signal}] w=${ev.weight} → ${ev.detail}`);
+      lines.push("  Evidence breakdown:");
+      const sortedEvidence = [...node.evidence].sort((a, b) => b.weight - a.weight);
+      const projectWeights = getProjectWeights();
+      
+      for (const ev of sortedEvidence) {
+        const baseWeight = SIGNAL_WEIGHTS[ev.signal] ?? 0;
+        const learnedWeight = projectWeights?.[ev.signal];
+        const weightNote = learnedWeight !== undefined && learnedWeight !== baseWeight
+          ? ` (learned: ${learnedWeight.toFixed(2)}, base: ${baseWeight.toFixed(2)})`
+          : "";
+        lines.push(`    [${ev.signal}] weight=${ev.weight.toFixed(2)}${weightNote}`);
+        lines.push(`      → ${ev.detail}`);
       }
+      
+      // Show confidence computation
+      const topWeight = sortedEvidence[0]?.weight || 0;
+      const boostSum = sortedEvidence.slice(1).reduce((sum, ev) => sum + ev.weight * 0.3, 0);
+      const computedConf = Math.min(topWeight + boostSum, 1.0);
+      lines.push(`  Computed confidence: ${topWeight.toFixed(2)} + boost ${boostSum.toFixed(2)} = ${computedConf.toFixed(2)}`);
     }
 
     if (node.candidates.length > 1) {
       lines.push(`  Other candidates (${node.candidates.length - 1}):`);
       for (const cand of node.candidates.slice(1, 4)) {
+        const signals = cand.evidence?.map(e => e.signal).join(", ") || "none";
         lines.push(
-          `    ${cand.file}:${cand.line} conf=${(cand.confidence * 100).toFixed(0)}%`
+          `    ${cand.file}:${cand.line} conf=${(cand.confidence * 100).toFixed(0)}% [${signals}]`
         );
       }
     }
   } else {
     lines.push("  Mapped: NO");
     lines.push(`  Confidence: ${(node.confidence * 100).toFixed(0)}%`);
+    
+    // Suggest why mapping might have failed
+    if (!node.identifier && !node.label) {
+      lines.push("  No identifier or label available for matching");
+    } else if (node.candidates && node.candidates.length > 0) {
+      lines.push(`  Had ${node.candidates.length} candidates but all below confidence threshold (${CONFIDENCE.MEDIUM})`);
+    }
   }
 
   return lines.join("\n");

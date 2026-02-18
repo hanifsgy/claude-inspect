@@ -2,7 +2,7 @@
  * Mapping module — barrel export
  */
 
-export { SIGNAL_TYPES, SIGNAL_WEIGHTS, CONFIDENCE, createEvidence, computeConfidence, createEnrichedNode } from "./contract.js";
+export { SIGNAL_TYPES, SIGNAL_WEIGHTS, CONFIDENCE, createEvidence, computeConfidence, createEnrichedNode, loadProjectWeights, saveProjectWeights, getEffectiveWeight, updateWeightFromFeedback, getProjectWeights } from "./contract.js";
 export { buildModuleIndex, ModuleIndex } from "./module-indexer.js";
 export { buildSourceIndexes, summarizeIndexes, matchNode, matchAll, setStateDir } from "./candidate-matcher.js";
 export { loadOverrides, addRuntimeOverride, getRuntimeOverrides, clearRuntimeOverrides, persistRuntimeOverrides } from "./overrides.js";
