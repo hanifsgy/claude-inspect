@@ -30,6 +30,8 @@ struct ComponentData: Codable {
     let frame: FrameData
     let file: String?
     let fileLine: Int?
+    let ownerType: String?
+    let confidence: Double?
 }
 
 struct FrameData: Codable {

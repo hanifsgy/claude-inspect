@@ -1,74 +1,222 @@
-# How to Install
+# How to Install Simulator Inspector on Your Project
 
-This project can be reused as a standalone toolkit and connected to Claude Code via MCP.
+This is a **standalone toolkit** — it lives outside your iOS project and connects to Claude Code via MCP. Your actual iOS project doesn't need any modifications.
 
-## 1) Clone and install dependencies
+## Prerequisites
+
+- macOS with Xcode and iOS Simulator
+- Node.js 18+
+- `axe` CLI in your PATH (`axe describe-ui` must work)
+- Claude Code CLI
+
+## 1. Clone and build
 
 ```bash
-git clone <your-repo-url> analyze-components-tools
-cd analyze-components-tools
+git clone https://github.com/hanifsgy/claude-inspect.git
+cd claude-inspect
 npm install
-```
-
-## 2) Build the overlay binary
-
-```bash
 ./scripts/build-overlay.sh
 ```
 
-## 3) Prerequisites
+Note the absolute path — you'll need it below. Example: `/Users/you/tools/claude-inspect`
 
-- macOS with Xcode Simulator
-- Node.js
-- `axe` CLI available in `PATH`
+## 2. Connect to your iOS project
 
-## 4) Hook into Claude Code (MCP)
-
-In your target project, create or update `.mcp.json`:
+In your **actual iOS project root**, create or update `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "simulator-inspector": {
       "command": "node",
-      "args": ["/ABSOLUTE/PATH/TO/analyze-components-tools/src/server.js"],
-      "cwd": "/ABSOLUTE/PATH/TO/analyze-components-tools"
+      "args": ["/ABSOLUTE/PATH/TO/claude-inspect/src/server.js"],
+      "cwd": "/ABSOLUTE/PATH/TO/claude-inspect"
     }
   }
 }
 ```
 
-Available MCP tools:
+> **Important**: The `cwd` field must point to the claude-inspect directory so the server can find the overlay binary, scripts, and state files.
 
-- `inspector_start`
-- `inspector_stop`
-- `get_hierarchy`
-- `wait_for_selection`
+This single file is what makes Claude aware of the inspector tools. When Claude Code starts in your project directory, it reads `.mcp.json` and connects to the MCP server automatically.
 
-## 5) Optional Claude Code integrations
+## 3. Allow the MCP tools
 
-Copy command docs to your project:
-
-- `.claude/commands/infra-basic/simulator-inspector-on.md`
-- `.claude/commands/infra-basic/simulator-inspector-off.md`
-
-Add hook in `.claude/settings.local.json`:
+In your project's `.claude/settings.local.json` (create if it doesn't exist):
 
 ```json
 {
+  "permissions": {
+    "allow": [
+      "mcp__simulator-inspector__inspector_start",
+      "mcp__simulator-inspector__inspector_stop",
+      "mcp__simulator-inspector__get_hierarchy",
+      "mcp__simulator-inspector__wait_for_selection",
+      "mcp__simulator-inspector__explain_component"
+    ]
+  }
+}
+```
+
+Without this, Claude will prompt you to approve each tool call individually.
+
+## 4. Add the selection hook (optional but recommended)
+
+The hook automatically injects selected component context into every Claude prompt. Add to your `.claude/settings.local.json`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__simulator-inspector__inspector_start",
+      "mcp__simulator-inspector__inspector_stop",
+      "mcp__simulator-inspector__get_hierarchy",
+      "mcp__simulator-inspector__wait_for_selection",
+      "mcp__simulator-inspector__explain_component",
+      "Bash(/ABSOLUTE/PATH/TO/claude-inspect/hooks/user-prompt-submit.sh)"
+    ]
+  },
   "hooks": {
     "UserPromptSubmit": [
       {
-        "command": "/ABSOLUTE/PATH/TO/analyze-components-tools/hooks/user-prompt-submit.sh"
+        "command": "/ABSOLUTE/PATH/TO/claude-inspect/hooks/user-prompt-submit.sh"
       }
     ]
   }
 }
 ```
 
-## 6) Run manually (optional)
+With this hook, after you click a component in the overlay, your next Claude prompt automatically receives the component's class, file:line, confidence score, and evidence chain.
+
+## 5. Copy slash commands (optional)
+
+To use `/infra-basic:simulator-inspector-on` and `off` shortcuts:
 
 ```bash
-./scripts/simulator-inspector-on.sh <path-to-swift-project>
-./scripts/simulator-inspector-off.sh
+mkdir -p .claude/commands/infra-basic
+cp /ABSOLUTE/PATH/TO/claude-inspect/.claude/commands/infra-basic/*.md .claude/commands/infra-basic/
 ```
+
+## 6. Usage
+
+### Start Claude Code in your project
+
+```bash
+cd /path/to/your/ios-project
+claude
+```
+
+Claude now has access to 5 inspector tools via MCP.
+
+### Start the inspector
+
+Tell Claude:
+```
+Start the simulator inspector on this project
+```
+
+Or use the slash command:
+```
+/infra-basic:simulator-inspector-on
+```
+
+Claude will call `inspector_start` with your project path. This:
+1. Runs AXe to capture the simulator's accessibility tree
+2. Scans your Swift source files to map UI elements → file:line
+3. Opens the overlay with blue outlines on every component
+
+### Click a component
+
+Click any outlined component in the overlay. The inspector saves metadata to `state/selected_component.json`. If you have the hook configured, your next prompt to Claude automatically includes:
+- Class name and identifier
+- Source file and line number
+- Owner class (enclosing type)
+- Confidence score with evidence
+- Alternative candidates (if ambiguous)
+
+### Ask Claude about the component
+
+After clicking, just type your question:
+```
+What does this component do?
+How can I change the layout of this view?
+Show me the data flow for this cell
+```
+
+Claude receives the component context automatically and can navigate to the relevant source code.
+
+### Stop the inspector
+
+```
+Stop the inspector
+```
+
+Or: `/infra-basic:simulator-inspector-off`
+
+## What Claude sees
+
+When connected via MCP, Claude has these tools:
+
+| Tool | What it does |
+|------|-------------|
+| `inspector_start` | Scan hierarchy + map to source + show overlay |
+| `inspector_stop` | Close overlay |
+| `get_hierarchy` | Get the full enriched hierarchy with file:line mappings |
+| `wait_for_selection` | Wait for user to click a component |
+| `explain_component` | Explain why a component was mapped to a specific file |
+
+## How mapping works
+
+The inspector doesn't just use class names. It uses **multi-signal matching**:
+
+| Signal | Weight | Example |
+|--------|--------|---------|
+| `identifier_exact` | 0.9 | `.accessibilityIdentifier = "submitButton"` matches exactly |
+| `class_name` | 0.7 | AX type `UIButton` matches `class SubmitButton: UIButton` |
+| `identifier_prefix` | 0.6 | `"card.\(index)"` matches `card.0`, `card.1`, etc. |
+| `label_exact` | 0.5 | AX label matches string literal in source |
+| `manual_override` | 1.0 | From `config/inspector-map.json` |
+
+Confidence: **HIGH** >= 70%, **MEDIUM** >= 40%
+
+## Manual overrides
+
+For components the auto-mapper can't resolve, edit `config/inspector-map.json` in the claude-inspect directory:
+
+```json
+{
+  "overrides": [
+    {
+      "axId": "some.component.id",
+      "file": "Sources/MyView.swift",
+      "line": 42,
+      "ownerType": "MyView"
+    }
+  ]
+}
+```
+
+## Supported project types
+
+The module indexer auto-detects:
+- **Xcode projects** (`.xcodeproj`, including Xcode 16+ fileSystemSynchronizedGroups)
+- **XcodeGen** (`project.yml`)
+- **Swift Package Manager** (`Package.swift`)
+- **Plain directories** (fallback — recursively finds `.swift` files)
+
+## Troubleshooting
+
+**Claude says "Unknown skill" for slash commands:**
+Make sure you launched Claude Code from within your project directory where `.claude/commands/` exists.
+
+**0 components mapped:**
+Check that `inspector_start` received the correct absolute path to your Swift project.
+
+**Overlay doesn't appear:**
+- Is the iOS Simulator running with a booted device?
+- Was the overlay built? Check: `ls /path/to/claude-inspect/overlay/.build/release/OverlayApp`
+
+**Hook not injecting context:**
+- Is the hook path absolute and correct in settings.local.json?
+- Is `user-prompt-submit.sh` executable? `chmod +x /path/to/hooks/user-prompt-submit.sh`
+- Was a component clicked in the last 5 minutes?

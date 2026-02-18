@@ -1,14 +1,19 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { describeUI, flattenTree } from "./axe.js";
-import { reconcile } from "./file-mapper.js";
+import { describeUI } from "./axe.js";
+import { matchAll, loadOverrides, setStateDir, computeMetrics, formatMetrics, explainNode } from "./mapping/index.js";
 import { OverlayBridge } from "./overlay-bridge.js";
 import { saveHierarchy, loadHierarchy, saveSelection, getSelection } from "./store.js";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const toolRoot = dirname(__dirname);
 
 const server = new McpServer({
   name: "simulator-inspector",
-  version: "1.0.0",
+  version: "2.0.0",
 });
 
 const bridge = new OverlayBridge();
@@ -17,7 +22,7 @@ let currentHierarchy = null;
 // --- Tool: inspector_start ---
 server.tool(
   "inspector_start",
-  "Start the simulator inspector. If the script already ran (hierarchy exists in data/hierarchy.json), reuses that data. Otherwise runs AXe + file mapper fresh. Launches overlay with component outlines.",
+  "Start the simulator inspector. If the script already ran (hierarchy exists in data/hierarchy.json), reuses that data. Otherwise runs AXe + new mapping module with confidence scoring.",
   {
     projectPath: z
       .string()
@@ -36,15 +41,12 @@ server.tool(
     try {
       // Check if script already generated the hierarchy
       const existing = loadHierarchy();
-      const isFresh = existing && (Date.now() - existing.timestamp < 60000); // <1 min old
+      const isFresh = existing && (Date.now() - existing.timestamp < 60000);
 
       if (isFresh && !rescan) {
-        // Reuse hierarchy from scan.js (already run by simulator-inspector-on.sh)
         currentHierarchy = existing;
-        const mapped = existing.enriched.filter((n) => n.mapped).length;
-        const total = existing.enriched.length;
+        const metrics = computeMetrics(existing.enriched);
 
-        // Start overlay and send existing frames
         bridge.start(simulatorUdid || "booted");
         const components = existing.enriched.map((node) => ({
           id: node.id,
@@ -58,27 +60,24 @@ server.tool(
           content: [
             {
               type: "text",
-              text: `Inspector started (using cached scan). Found ${total} UI elements, ${mapped} mapped to source files.`,
+              text: `Inspector started (cached scan).\n${formatMetrics(metrics)}`,
             },
           ],
         };
       }
 
-      // Fresh scan: AXe + file mapper
-      // 1. Start overlay
+      // Fresh scan: AXe + mapping module
       bridge.start(simulatorUdid || "booted");
 
-      // 2. Run AXe to get class names from simulator
       const { tree, flat } = describeUI(simulatorUdid);
 
-      // 3. Run file mapper to enrich with file:line + dependencies
-      const enriched = reconcile(flat, projectPath);
+      setStateDir(join(toolRoot, "state"));
+      const { overrides } = loadOverrides(toolRoot);
+      const enriched = matchAll(flat, projectPath, overrides);
 
-      // 4. Save hierarchy
       currentHierarchy = { tree, enriched, timestamp: Date.now() };
       saveHierarchy(currentHierarchy);
 
-      // 5. Send frames to overlay
       const components = enriched.map((node) => ({
         id: node.id,
         className: node.className,
@@ -87,14 +86,13 @@ server.tool(
       }));
       bridge.highlight(components);
 
-      const mapped = enriched.filter((n) => n.mapped).length;
-      const total = enriched.length;
+      const metrics = computeMetrics(enriched);
 
       return {
         content: [
           {
             type: "text",
-            text: `Inspector started (fresh scan). Found ${total} UI elements, ${mapped} mapped to source files.`,
+            text: `Inspector started (fresh scan).\n${formatMetrics(metrics)}`,
           },
         ],
       };
@@ -124,7 +122,7 @@ server.tool(
 // --- Tool: get_hierarchy ---
 server.tool(
   "get_hierarchy",
-  "Return the enriched UI hierarchy tree with class names, file:line mappings, frames, and dependency info.",
+  "Return the enriched UI hierarchy with file:line mappings, confidence scores, and per-node evidence chains.",
   {},
   async () => {
     const hierarchy = currentHierarchy || loadHierarchy();
@@ -141,11 +139,24 @@ server.tool(
       };
     }
 
+    // Compact output: only essential fields
+    const compact = hierarchy.enriched.map((n) => ({
+      id: n.id,
+      className: n.className,
+      name: n.name,
+      frame: n.frame,
+      file: n.file,
+      fileLine: n.fileLine,
+      ownerType: n.ownerType,
+      confidence: n.confidence,
+      mapped: n.mapped,
+    }));
+
     return {
       content: [
         {
           type: "text",
-          text: JSON.stringify(hierarchy.enriched, null, 2),
+          text: JSON.stringify(compact, null, 2),
         },
       ],
     };
@@ -155,7 +166,7 @@ server.tool(
 // --- Tool: wait_for_selection ---
 server.tool(
   "wait_for_selection",
-  "Wait for the user to click a component in the simulator overlay. Returns the selected component's metadata including class name, file:line, frame, and dependencies.",
+  "Wait for the user to click a component in the overlay. Returns rich context: class, file:line, ownerType, confidence, evidence, and source dependencies.",
   {
     timeoutSeconds: z
       .number()
@@ -178,16 +189,42 @@ server.tool(
       const selection = enrichedMatch || clicked;
       saveSelection(selection);
 
+      // Build rich context
       const lines = [
-        `Selected: ${selection.className}`,
-        selection.name ? `Name: "${selection.name}"` : null,
-        selection.file ? `File: ${selection.file}:${selection.fileLine}` : null,
-        selection.parentClass ? `Parent: ${selection.parentClass}` : null,
-        `Frame: (${selection.frame.x}, ${selection.frame.y}, ${selection.frame.w}, ${selection.frame.h})`,
-      ].filter(Boolean);
+        `## Selected Component`,
+        ``,
+        `**${selection.className}** \`${selection.name || selection.id}\``,
+      ];
 
-      if (selection.dependencies && selection.dependencies.imports) {
-        lines.push(`Imports: ${selection.dependencies.imports.join(", ")}`);
+      if (selection.file) {
+        lines.push(`**File:** \`${selection.file}:${selection.fileLine}\``);
+      }
+      if (selection.ownerType) {
+        lines.push(`**Owner:** \`${selection.ownerType}\``);
+      }
+      if (selection.mappedModule) {
+        lines.push(`**Module:** ${selection.mappedModule}`);
+      }
+      if (selection.confidence !== undefined) {
+        const pct = (selection.confidence * 100).toFixed(0);
+        const level = selection.confidence >= 0.7 ? "high" : selection.confidence >= 0.4 ? "medium" : "low";
+        lines.push(`**Confidence:** ${pct}% (${level})${selection.ambiguous ? " - AMBIGUOUS" : ""}`);
+      }
+
+      lines.push(`**Frame:** (${selection.frame.x}, ${selection.frame.y}, ${selection.frame.w}, ${selection.frame.h})`);
+
+      if (selection.evidence && selection.evidence.length > 0) {
+        lines.push(``, `**Evidence:**`);
+        for (const ev of selection.evidence) {
+          lines.push(`- [${ev.signal}] ${ev.detail}`);
+        }
+      }
+
+      if (selection.candidates && selection.candidates.length > 1) {
+        lines.push(``, `**Other candidates:** ${selection.candidates.length - 1}`);
+        for (const cand of selection.candidates.slice(1, 4)) {
+          lines.push(`- ${cand.file}:${cand.line} (${(cand.confidence * 100).toFixed(0)}%)`);
+        }
       }
 
       return {
@@ -199,6 +236,37 @@ server.tool(
         isError: true,
       };
     }
+  }
+);
+
+// --- Tool: explain_component ---
+server.tool(
+  "explain_component",
+  "Explain why a specific component was mapped to a source file. Shows all signals, weights, and alternative candidates.",
+  {
+    componentId: z.string().describe("The component ID to explain (e.g. 'command.header.title')"),
+  },
+  async ({ componentId }) => {
+    const hierarchy = currentHierarchy || loadHierarchy();
+
+    if (!hierarchy) {
+      return {
+        content: [{ type: "text", text: "No hierarchy available. Run inspector_start first." }],
+        isError: true,
+      };
+    }
+
+    const node = hierarchy.enriched.find((n) => n.id === componentId);
+    if (!node) {
+      return {
+        content: [{ type: "text", text: `Component "${componentId}" not found in hierarchy.` }],
+        isError: true,
+      };
+    }
+
+    return {
+      content: [{ type: "text", text: explainNode(node) }],
+    };
   }
 );
 
