@@ -24,6 +24,11 @@ final class HomeRouter: HomeRoutingLogic {
     }
 
     func routeToBottomDestination(_ destination: Home.Destination) {
+        if let tabBarController = viewController?.tabBarController {
+            tabBarController.selectedIndex = tabIndex(for: destination)
+            return
+        }
+
         switch destination {
         case .commands:
             routeToCommands()
@@ -36,13 +41,30 @@ final class HomeRouter: HomeRoutingLogic {
 }
 
 private extension HomeRouter {
+    func tabIndex(for destination: Home.Destination) -> Int {
+        switch destination {
+        case .chats: return 0
+        case .commands: return 1
+        case .analytics: return 2
+        case .profile: return 3
+        }
+    }
+
     func routeToCommands() {
         guard let viewController else { return }
-        guard !(viewController.presentedViewController is CommandViewController) else { return }
+        guard !(viewController is CommandViewController) else { return }
 
-        let commandViewController = CommandViewController()
-        commandViewController.modalPresentationStyle = .fullScreen
-        viewController.present(commandViewController, animated: true)
+        switchRoot(to: CommandViewController())
+    }
+
+    func switchRoot(to nextViewController: UIViewController) {
+        guard let currentViewController = viewController else { return }
+        guard let window = currentViewController.view.window else { return }
+        guard type(of: window.rootViewController) != type(of: nextViewController) else { return }
+
+        UIView.transition(with: window, duration: 0.2, options: .transitionCrossDissolve) {
+            window.rootViewController = nextViewController
+        }
     }
 
     func announce(message: String) {

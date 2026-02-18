@@ -12,14 +12,17 @@ final class ViewController: UIViewController, HomeDisplayLogic {
     var interactor: HomeBusinessLogic?
     var router: HomeRoutingLogic?
 
-    private let contentView = HomeContentView()
+    private let showsBottomNav: Bool
+    private lazy var contentView = HomeContentView(showsBottomNav: showsBottomNav)
 
-    init() {
+    init(showsBottomNav: Bool = true) {
+        self.showsBottomNav = showsBottomNav
         super.init(nibName: nil, bundle: nil)
         HomeConfigurator.configure(viewController: self)
     }
 
     required init?(coder: NSCoder) {
+        self.showsBottomNav = true
         super.init(coder: coder)
         HomeConfigurator.configure(viewController: self)
     }

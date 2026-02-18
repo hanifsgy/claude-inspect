@@ -5,14 +5,17 @@ final class CommandViewController: UIViewController, CommandDisplayLogic {
     var interactor: CommandBusinessLogic?
     var router: CommandRoutingLogic?
 
-    private let contentView = CommandContentView()
+    private let showsBottomNav: Bool
+    private lazy var contentView = CommandContentView(showsBottomNav: showsBottomNav)
 
-    init() {
+    init(showsBottomNav: Bool = true) {
+        self.showsBottomNav = showsBottomNav
         super.init(nibName: nil, bundle: nil)
         CommandConfigurator.configure(viewController: self)
     }
 
     required init?(coder: NSCoder) {
+        self.showsBottomNav = true
         super.init(coder: coder)
         CommandConfigurator.configure(viewController: self)
     }

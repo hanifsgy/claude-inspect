@@ -5,6 +5,7 @@ final class CommandContentView: UIView {
     var onBottomNavTap: ((Home.Destination) -> Void)?
     var onClearAllTap: (() -> Void)?
 
+    private let showsBottomNav: Bool
     private let theme = CommandTheme()
 
     private let headerView = UIView()
@@ -31,8 +32,9 @@ final class CommandContentView: UIView {
 
     private let bottomNavView = CommandBottomNavView()
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init(showsBottomNav: Bool = true) {
+        self.showsBottomNav = showsBottomNav
+        super.init(frame: .zero)
         configureViewHierarchy()
         configureStyle()
         configureLayout()
@@ -50,7 +52,9 @@ final class CommandContentView: UIView {
         renderFilters(viewModel.filters, selected: viewModel.selectedFilter)
         renderLibraryItems(viewModel.libraryItems)
         renderExecutionLogs(viewModel.executionLogs)
-        bottomNavView.select(destination: viewModel.selectedDestination)
+        if showsBottomNav {
+            bottomNavView.select(destination: viewModel.selectedDestination)
+        }
     }
 }
 
@@ -77,7 +81,9 @@ private extension CommandContentView {
         executionHeaderStack.addArrangedSubview(clearAllButton)
         executionSectionView.addSubview(executionItemsStack)
 
-        addSubview(bottomNavView)
+        if showsBottomNav {
+            addSubview(bottomNavView)
+        }
     }
 
     func configureStyle() {
@@ -135,7 +141,7 @@ private extension CommandContentView {
     }
 
     func configureLayout() {
-        [
+        var layoutViews: [UIView] = [
             headerView,
             titleLabel,
             searchContainerView,
@@ -150,11 +156,14 @@ private extension CommandContentView {
             libraryCardsStack,
             executionSectionView,
             executionHeaderStack,
-            executionItemsStack,
-            bottomNavView
-        ].forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
+            executionItemsStack
+        ]
+        if showsBottomNav {
+            layoutViews.append(bottomNavView)
+        }
+        layoutViews.forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
 
-        NSLayoutConstraint.activate([
+        var constraints = [
             headerView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -190,15 +199,9 @@ private extension CommandContentView {
             filtersStack.trailingAnchor.constraint(equalTo: filtersScrollView.contentLayoutGuide.trailingAnchor),
             filtersStack.heightAnchor.constraint(equalTo: filtersScrollView.frameLayoutGuide.heightAnchor),
 
-            bottomNavView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            bottomNavView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            bottomNavView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            bottomNavView.heightAnchor.constraint(equalToConstant: 88),
-
             scrollView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: bottomNavView.topAnchor),
 
             scrollContentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
             scrollContentView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor),
@@ -232,13 +235,29 @@ private extension CommandContentView {
             executionItemsStack.leadingAnchor.constraint(equalTo: executionSectionView.leadingAnchor, constant: 20),
             executionItemsStack.trailingAnchor.constraint(equalTo: executionSectionView.trailingAnchor, constant: -20),
             executionItemsStack.bottomAnchor.constraint(equalTo: executionSectionView.bottomAnchor, constant: -20)
-        ])
+        ]
+
+        if showsBottomNav {
+            constraints.append(contentsOf: [
+                bottomNavView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                bottomNavView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                bottomNavView.bottomAnchor.constraint(equalTo: bottomAnchor),
+                bottomNavView.heightAnchor.constraint(equalToConstant: 88),
+                scrollView.bottomAnchor.constraint(equalTo: bottomNavView.topAnchor)
+            ])
+        } else {
+            constraints.append(scrollView.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor))
+        }
+
+        NSLayoutConstraint.activate(constraints)
     }
 
     func configureActions() {
         clearAllButton.addTarget(self, action: #selector(handleClearAll), for: .touchUpInside)
-        bottomNavView.onTap = { [weak self] destination in
-            self?.onBottomNavTap?(destination)
+        if showsBottomNav {
+            bottomNavView.onTap = { [weak self] destination in
+                self?.onBottomNavTap?(destination)
+            }
         }
     }
 
@@ -268,6 +287,9 @@ private extension CommandContentView {
         executionTitleLabel.accessibilityIdentifier = "command.execution.title"
         clearAllButton.accessibilityIdentifier = "command.execution.clearAll"
         clearAllButton.accessibilityHint = "Clears all execution entries"
+        if showsBottomNav {
+            bottomNavView.accessibilityIdentifier = "command.bottomNav"
+        }
     }
 
     func renderFilters(_ filters: [Command.Filter], selected: Command.Category) {

@@ -7,6 +7,7 @@ final class HomeContentView: UIView {
     var onCreateTap: (() -> Void)?
     var onBottomNavTap: ((Home.Destination) -> Void)?
 
+    private let showsBottomNav: Bool
     private let theme = HomeTheme()
 
     private let headerView = HomeHeaderView()
@@ -27,8 +28,9 @@ final class HomeContentView: UIView {
     private let createButton = UIButton(type: .system)
     private let bottomNavView = HomeBottomNavView()
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init(showsBottomNav: Bool = true) {
+        self.showsBottomNav = showsBottomNav
+        super.init(frame: .zero)
         configureViewHierarchy()
         configureStyle()
         configureLayout()
@@ -44,7 +46,9 @@ final class HomeContentView: UIView {
         headerView.setTitle(viewModel.title)
         renderRecentOutputs(viewModel.recentOutputs)
         renderThreads(viewModel.threads)
-        bottomNavView.select(destination: viewModel.selectedDestination)
+        if showsBottomNav {
+            bottomNavView.select(destination: viewModel.selectedDestination)
+        }
     }
 }
 
@@ -68,7 +72,9 @@ private extension HomeContentView {
         contentStack.addArrangedSubview(threadsStack)
 
         addSubview(createButton)
-        addSubview(bottomNavView)
+        if showsBottomNav {
+            addSubview(bottomNavView)
+        }
     }
 
     func configureStyle() {
@@ -114,30 +120,27 @@ private extension HomeContentView {
     }
 
     func configureLayout() {
-        [headerView, scrollView, contentStack, recentScrollView, recentCardsStack, createButton, bottomNavView].forEach {
+        var layoutViews: [UIView] = [headerView, scrollView, contentStack, recentScrollView, recentCardsStack, createButton]
+        if showsBottomNav {
+            layoutViews.append(bottomNavView)
+        }
+        layoutViews.forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
 
-        NSLayoutConstraint.activate([
+        var constraints = [
             headerView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 64),
 
-            bottomNavView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            bottomNavView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            bottomNavView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            bottomNavView.heightAnchor.constraint(equalToConstant: 88),
-
             createButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
-            createButton.bottomAnchor.constraint(equalTo: bottomNavView.topAnchor, constant: -14),
             createButton.widthAnchor.constraint(equalToConstant: 56),
             createButton.heightAnchor.constraint(equalToConstant: 56),
 
             scrollView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: bottomNavView.topAnchor),
 
             contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 16),
             contentStack.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: 16),
@@ -150,14 +153,34 @@ private extension HomeContentView {
             recentCardsStack.leadingAnchor.constraint(equalTo: recentScrollView.contentLayoutGuide.leadingAnchor),
             recentCardsStack.trailingAnchor.constraint(equalTo: recentScrollView.contentLayoutGuide.trailingAnchor),
             recentCardsStack.heightAnchor.constraint(equalTo: recentScrollView.frameLayoutGuide.heightAnchor)
-        ])
+        ]
+
+        if showsBottomNav {
+            constraints.append(contentsOf: [
+                bottomNavView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                bottomNavView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                bottomNavView.bottomAnchor.constraint(equalTo: bottomAnchor),
+                bottomNavView.heightAnchor.constraint(equalToConstant: 88),
+                createButton.bottomAnchor.constraint(equalTo: bottomNavView.topAnchor, constant: -14),
+                scrollView.bottomAnchor.constraint(equalTo: bottomNavView.topAnchor)
+            ])
+        } else {
+            constraints.append(contentsOf: [
+                createButton.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -14),
+                scrollView.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor)
+            ])
+        }
+
+        NSLayoutConstraint.activate(constraints)
     }
 
     func configureActions() {
         headerView.onNotificationTap = { [weak self] in self?.onNotificationTap?() }
         viewAllButton.addTarget(self, action: #selector(handleViewAll), for: .touchUpInside)
         createButton.addTarget(self, action: #selector(handleCreate), for: .touchUpInside)
-        bottomNavView.onTap = { [weak self] destination in self?.onBottomNavTap?(destination) }
+        if showsBottomNav {
+            bottomNavView.onTap = { [weak self] destination in self?.onBottomNavTap?(destination) }
+        }
     }
 
     func configureAccessibility() {
@@ -171,6 +194,9 @@ private extension HomeContentView {
         createButton.accessibilityIdentifier = "home.create"
         createButton.accessibilityLabel = "Create new"
         createButton.accessibilityHint = "Starts a new chat or command"
+        if showsBottomNav {
+            bottomNavView.accessibilityIdentifier = "home.bottomNav"
+        }
     }
 
     @objc func handleViewAll() {
