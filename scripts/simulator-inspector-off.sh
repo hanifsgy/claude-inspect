@@ -5,7 +5,7 @@ STATE_DIR="$SCRIPT_DIR/../state"
 SCAN_PID_PATH="$STATE_DIR/scan.pid"
 SCAN_TRIGGER_PATH="$STATE_DIR/scan.trigger"
 
-# Kill by saved PID first, fall back to pkill
+# Kill by saved PID only
 if [ -f "$STATE_DIR/overlay.pid" ]; then
     PID=$(cat "$STATE_DIR/overlay.pid")
     if kill -0 "$PID" 2>/dev/null; then
@@ -15,9 +15,6 @@ if [ -f "$STATE_DIR/overlay.pid" ]; then
         echo "Overlay already stopped."
     fi
     rm -f "$STATE_DIR/overlay.pid"
-elif pgrep -f "OverlayApp" > /dev/null 2>&1; then
-    pkill -f "OverlayApp"
-    echo "Overlay killed."
 else
     echo "No overlay running."
 fi

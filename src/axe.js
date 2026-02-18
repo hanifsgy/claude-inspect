@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 
 // Map AXe type field → UIKit class names
 const TYPE_MAP = {
@@ -112,14 +112,22 @@ export function flattenTree(nodes, parentId = null) {
  */
 export function describeUI(udid) {
   // AXe requires --udid, so resolve it
-  const resolvedUdid = udid || getBootedUdid();
+  let resolvedUdid = udid || getBootedUdid();
+  if (resolvedUdid === "booted") {
+    resolvedUdid = getBootedUdid();
+  }
   if (!resolvedUdid) {
     throw new Error("No booted simulator found. Start a simulator first.");
   }
 
+  const udidPattern = /^[A-F0-9-]{36}$/i;
+  if (!udidPattern.test(resolvedUdid)) {
+    throw new Error(`Invalid simulator UDID: ${resolvedUdid}`);
+  }
+
   let output;
   try {
-    output = execSync(`axe describe-ui --udid ${resolvedUdid}`, {
+    output = execFileSync("axe", ["describe-ui", "--udid", resolvedUdid], {
       encoding: "utf-8",
       timeout: 15000,
       maxBuffer: 10 * 1024 * 1024,

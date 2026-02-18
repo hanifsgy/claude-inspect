@@ -23,9 +23,15 @@ SIMULATOR_UDID="${2:-}"
 
 mkdir -p "$STATE_DIR"
 
-# Kill any existing overlay
-pkill -f "OverlayApp" 2>/dev/null || true
-sleep 0.3
+# Kill existing overlay only by managed PID
+if [ -f "$STATE_DIR/overlay.pid" ]; then
+    OLD_OVERLAY_PID=$(cat "$STATE_DIR/overlay.pid")
+    if kill -0 "$OLD_OVERLAY_PID" 2>/dev/null; then
+        kill "$OLD_OVERLAY_PID" 2>/dev/null || true
+        sleep 0.3
+    fi
+    rm -f "$STATE_DIR/overlay.pid"
+fi
 
 # Kill previous scanner loop if running
 if [ -f "$SCAN_PID_PATH" ]; then

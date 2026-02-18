@@ -14,7 +14,6 @@ RUNTIME_PATHS=(
     "/overlay/"
     "/scripts/"
     "/src/"
-    "/state/"
     "/install.sh"
     "/package.json"
     "/package-lock.json"

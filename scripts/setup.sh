@@ -98,7 +98,7 @@ detect_arch_token() {
 }
 
 download_prebuilt_overlay() {
-    local arch_token release_json asset_url tmp_bin
+    local arch_token release_json asset_url asset_name checksum_url checksum_file expected_sha actual_sha tmp_bin
     arch_token=$(detect_arch_token)
 
     if [ -z "$arch_token" ]; then
@@ -131,10 +131,36 @@ if (candidates.length === 0) {
   process.stdout.write(String(candidates[0].browser_download_url || ''));
 }
 " "$release_json" "$arch_token")
-    rm -f "$release_json"
 
     if [ -z "$asset_url" ]; then
+        rm -f "$release_json"
         echo "  No matching release asset found for macOS/$arch_token; building from source."
+        return 1
+    fi
+
+    asset_name=$(basename "$asset_url")
+    checksum_url=$(node --input-type=module -e "
+import { readFileSync } from 'fs';
+
+const release = JSON.parse(readFileSync(process.argv[1], 'utf8'));
+const assetName = process.argv[2];
+const assets = Array.isArray(release.assets) ? release.assets : [];
+const exact = assets.find((asset) => String(asset.name || '') === (assetName + '.sha256'));
+if (exact) {
+  process.stdout.write(String(exact.browser_download_url || ''));
+} else {
+  process.stdout.write('');
+}
+" "$release_json" "$asset_name")
+    rm -f "$release_json"
+
+    if [ -z "$checksum_url" ]; then
+        echo "  Missing checksum asset (${asset_name}.sha256); building from source."
+        return 1
+    fi
+
+    if ! command -v shasum >/dev/null 2>&1; then
+        echo "  shasum not found; building from source."
         return 1
     fi
 
@@ -143,6 +169,29 @@ if (candidates.length === 0) {
     if ! curl -fL "$asset_url" -o "$tmp_bin"; then
         rm -f "$tmp_bin"
         echo "  Download failed; building from source."
+        return 1
+    fi
+
+    checksum_file=$(mktemp)
+    if ! curl -fsSL "$checksum_url" -o "$checksum_file"; then
+        rm -f "$tmp_bin" "$checksum_file"
+        echo "  Failed to download checksum file; building from source."
+        return 1
+    fi
+
+    expected_sha=$(tr -d '\r' < "$checksum_file" | awk '{print $1}')
+    rm -f "$checksum_file"
+
+    if [ -z "$expected_sha" ]; then
+        rm -f "$tmp_bin"
+        echo "  Invalid checksum file format; building from source."
+        return 1
+    fi
+
+    actual_sha=$(shasum -a 256 "$tmp_bin" | awk '{print $1}')
+    if [ "$actual_sha" != "$expected_sha" ]; then
+        rm -f "$tmp_bin"
+        echo "  Checksum mismatch for downloaded overlay; building from source."
         return 1
     fi
 
@@ -232,7 +281,8 @@ if [ -f "$SETTINGS_FILE" ]; then
             'mcp__simulator-inspector__get_hierarchy',
             'mcp__simulator-inspector__wait_for_selection',
             'mcp__simulator-inspector__explain_component',
-            'Bash($TOOL_DIR/scripts/*)',
+            'Bash($TOOL_DIR/scripts/simulator-inspector-on.sh:*)',
+            'Bash($TOOL_DIR/scripts/simulator-inspector-off.sh:*)',
             'Bash($HOOK_CMD)'
         ];
 
@@ -296,7 +346,8 @@ else
       "mcp__simulator-inspector__get_hierarchy",
       "mcp__simulator-inspector__wait_for_selection",
       "mcp__simulator-inspector__explain_component",
-      "Bash($TOOL_DIR/scripts/*)",
+      "Bash($TOOL_DIR/scripts/simulator-inspector-on.sh:*)",
+      "Bash($TOOL_DIR/scripts/simulator-inspector-off.sh:*)",
       "Bash($HOOK_CMD)"
     ]
   },
