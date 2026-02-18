@@ -192,8 +192,32 @@ server.tool(
 server.tool(
   "get_hierarchy",
   "Return the enriched UI hierarchy with file:line mappings, confidence scores, and per-node evidence chains.",
-  {},
-  async () => {
+  {
+    minConfidence: z
+      .number()
+      .optional()
+      .default(0)
+      .describe("Minimum confidence threshold (0-1). Default 0 returns all."),
+    module: z
+      .string()
+      .optional()
+      .describe("Filter by module name"),
+    excludeContainers: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe("Exclude UIApplication and container-only views"),
+    limit: z
+      .number()
+      .optional()
+      .describe("Maximum number of components to return"),
+    offset: z
+      .number()
+      .optional()
+      .default(0)
+      .describe("Offset for pagination"),
+  },
+  async ({ minConfidence, module, excludeContainers, limit, offset }) => {
     const hierarchy = currentHierarchy || loadHierarchy();
     const maxAgeMs = 5 * 60 * 1000;
 
@@ -222,8 +246,32 @@ server.tool(
       };
     }
 
-    // Compact output: only essential fields
-    const compact = hierarchy.enriched.map((n) => ({
+    let filtered = hierarchy.enriched;
+
+    if (minConfidence > 0) {
+      filtered = filtered.filter((n) => (n.confidence || 0) >= minConfidence);
+    }
+
+    if (module) {
+      filtered = filtered.filter((n) => n.mappedModule === module);
+    }
+
+    if (excludeContainers) {
+      const containerClasses = ["UIApplication", "UIWindow"];
+      filtered = filtered.filter((n) => !containerClasses.includes(n.className));
+    }
+
+    const total = filtered.length;
+
+    if (offset > 0) {
+      filtered = filtered.slice(offset);
+    }
+
+    if (limit) {
+      filtered = filtered.slice(0, limit);
+    }
+
+    const compact = filtered.map((n) => ({
       id: n.id,
       className: n.className,
       name: n.name,
@@ -233,13 +281,226 @@ server.tool(
       ownerType: n.ownerType,
       confidence: n.confidence,
       mapped: n.mapped,
+      module: n.mappedModule,
+    }));
+
+    const summary = {
+      total,
+      returned: compact.length,
+      offset: offset || 0,
+      filtered: minConfidence > 0 || module || excludeContainers,
+      components: compact,
+    };
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(summary, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+// --- Tool: suggest_mappings ---
+server.tool(
+  "suggest_mappings",
+  "For unmapped or low-confidence components, return likely source files based on partial signals. Useful when automatic mapping failed but you want manual selection options.",
+  {
+    componentId: z.string().describe("Component ID to find suggestions for"),
+    maxResults: z.number().optional().default(5).describe("Maximum suggestions to return"),
+  },
+  async ({ componentId, maxResults }) => {
+    const hierarchy = currentHierarchy || loadHierarchy();
+
+    if (!hierarchy) {
+      return {
+        content: [{ type: "text", text: "No hierarchy available. Run inspector_start first." }],
+        isError: true,
+      };
+    }
+
+    const node = hierarchy.enriched.find((n) => n.id === componentId);
+    if (!node) {
+      return {
+        content: [{ type: "text", text: `Component "${componentId}" not found in hierarchy.` }],
+        isError: true,
+      };
+    }
+
+    const suggestions = [];
+
+    if (node.candidates && node.candidates.length > 0) {
+      for (const cand of node.candidates.slice(0, maxResults)) {
+        suggestions.push({
+          file: cand.file,
+          line: cand.line,
+          confidence: cand.confidence,
+          reason: `Candidate from automatic matching`,
+        });
+      }
+    }
+
+    if (node.identifier) {
+      suggestions.push({
+        file: null,
+        line: null,
+        confidence: 0.3,
+        reason: `Search source for identifier: "${node.identifier}"`,
+        searchPattern: node.identifier,
+      });
+    }
+
+    if (node.className && node.className !== "UIView" && node.className !== "UILabel") {
+      suggestions.push({
+        file: null,
+        line: null,
+        confidence: 0.2,
+        reason: `Search source for class: ${node.className}`,
+        searchPattern: `class ${node.className}`,
+      });
+    }
+
+    if (node.label) {
+      suggestions.push({
+        file: null,
+        line: null,
+        confidence: 0.15,
+        reason: `Search source for label text: "${node.label}"`,
+        searchPattern: node.label,
+      });
+    }
+
+    const unique = [];
+    const seen = new Set();
+    for (const s of suggestions) {
+      const key = s.file ? `${s.file}:${s.line}` : s.searchPattern;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(s);
+      }
+    }
+
+    const result = {
+      componentId,
+      currentMapping: node.mapped
+        ? { file: node.file, line: node.fileLine, confidence: node.confidence }
+        : null,
+      suggestions: unique.slice(0, maxResults),
+    };
+
+    const lines = [
+      `## Suggestions for ${componentId}`,
+      ``,
+      `**Current mapping:** ${node.mapped ? `${node.file}:${node.fileLine} (${(node.confidence * 100).toFixed(0)}%)` : "None"}`,
+      ``,
+      `**Suggestions:**`,
+    ];
+
+    for (const s of unique.slice(0, maxResults)) {
+      if (s.file) {
+        lines.push(`- \`${s.file}:${s.line}\` (${(s.confidence * 100).toFixed(0)}%) — ${s.reason}`);
+      } else {
+        lines.push(`- [Search] ${s.reason}`);
+      }
+    }
+
+    return {
+      content: [{ type: "text", text: lines.join("\n") }],
+    };
+  }
+);
+
+// --- Tool: filter_hierarchy ---
+server.tool(
+  "filter_hierarchy",
+  "Filter hierarchy by multiple criteria. Returns components matching all specified filters.",
+  {
+    minConfidence: z.number().optional().describe("Minimum confidence (0-1)"),
+    maxConfidence: z.number().optional().describe("Maximum confidence (0-1)"),
+    mapped: z.boolean().optional().describe("Filter by mapped status (true/false)"),
+    hasIdentifier: z.boolean().optional().describe("Filter by presence of accessibilityIdentifier"),
+    module: z.string().optional().describe("Filter by module name"),
+    className: z.string().optional().describe("Filter by class name (supports wildcards)"),
+    screenRegion: z
+      .object({
+        x: z.number(),
+        y: z.number(),
+        w: z.number(),
+        h: z.number(),
+      })
+      .optional()
+      .describe("Screen region {x,y,w,h} - return components whose frame intersects"),
+    limit: z.number().optional().default(50).describe("Maximum results"),
+  },
+  async (filters) => {
+    const hierarchy = currentHierarchy || loadHierarchy();
+
+    if (!hierarchy) {
+      return {
+        content: [{ type: "text", text: "No hierarchy available. Run inspector_start first." }],
+        isError: true,
+      };
+    }
+
+    let filtered = hierarchy.enriched;
+
+    if (filters.minConfidence !== undefined) {
+      filtered = filtered.filter((n) => (n.confidence || 0) >= filters.minConfidence);
+    }
+
+    if (filters.maxConfidence !== undefined) {
+      filtered = filtered.filter((n) => (n.confidence || 0) <= filters.maxConfidence);
+    }
+
+    if (filters.mapped !== undefined) {
+      filtered = filtered.filter((n) => n.mapped === filters.mapped);
+    }
+
+    if (filters.hasIdentifier !== undefined) {
+      filtered = filtered.filter((n) => !!n.identifier === filters.hasIdentifier);
+    }
+
+    if (filters.module) {
+      filtered = filtered.filter((n) => n.mappedModule === filters.module);
+    }
+
+    if (filters.className) {
+      const pattern = filters.className.replace(/\*/g, ".*");
+      const regex = new RegExp(`^${pattern}$`, "i");
+      filtered = filtered.filter((n) => regex.test(n.className));
+    }
+
+    if (filters.screenRegion) {
+      const { x, y, w, h } = filters.screenRegion;
+      filtered = filtered.filter((n) => {
+        if (!n.frame) return false;
+        const nx = n.frame.x, ny = n.frame.y, nw = n.frame.w, nh = n.frame.h;
+        return !(nx + nw < x || nx > x + w || ny + nh < y || ny > y + h);
+      });
+    }
+
+    const total = filtered.length;
+    filtered = filtered.slice(0, filters.limit || 50);
+
+    const results = filtered.map((n) => ({
+      id: n.id,
+      className: n.className,
+      name: n.name,
+      file: n.file,
+      fileLine: n.fileLine,
+      confidence: n.confidence,
+      mapped: n.mapped,
+      identifier: n.identifier,
+      module: n.mappedModule,
     }));
 
     return {
       content: [
         {
           type: "text",
-          text: JSON.stringify(compact, null, 2),
+          text: JSON.stringify({ total, returned: results.length, filters, components: results }, null, 2),
         },
       ],
     };
