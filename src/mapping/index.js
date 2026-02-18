@@ -10,6 +10,7 @@ export {
   buildIdentifierRegistry,
   saveIdentifierRegistry,
   loadIdentifierRegistry,
+  ensureIdentifierRegistry,
   applyIdentifierRegistry,
 } from "./identifier-registry.js";
 export { computeMetrics, formatMetrics, explainNode, generateReport } from "./diagnostics.js";

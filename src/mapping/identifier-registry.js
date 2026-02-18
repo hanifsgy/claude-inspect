@@ -86,6 +86,20 @@ export function loadIdentifierRegistry(toolRoot, projectPath, explicitPath = nul
   return null;
 }
 
+export function ensureIdentifierRegistry(toolRoot, projectPath, indexes, explicitPath = null) {
+  const existing = loadIdentifierRegistry(toolRoot, projectPath, explicitPath);
+  if (existing) return existing;
+
+  const outputPath = explicitPath || join(resolve(projectPath), ".claude", "identifier-registry.json");
+  const registry = buildIdentifierRegistry(projectPath, indexes);
+  saveIdentifierRegistry(registry, outputPath);
+
+  return {
+    path: outputPath,
+    registry,
+  };
+}
+
 export function applyIdentifierRegistry(enrichedNodes, registry) {
   const exact = registry?.entries?.exact || {};
   const patterns = Array.isArray(registry?.entries?.patterns)

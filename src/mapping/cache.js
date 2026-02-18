@@ -45,13 +45,14 @@ export function computeFingerprint(files) {
  * @param {string} fingerprint - Current file fingerprint
  * @returns {Object|null} Cached data or null if stale/missing
  */
-export function loadCache(stateDir, fingerprint) {
+export function loadCache(stateDir, fingerprint, projectKey = null) {
   const cachePath = join(stateDir, CACHE_FILE);
   if (!existsSync(cachePath)) return null;
 
   try {
     const raw = JSON.parse(readFileSync(cachePath, "utf-8"));
-    if (raw.fingerprint === fingerprint) {
+    const cacheProjectKey = raw.projectKey || null;
+    if (raw.fingerprint === fingerprint && cacheProjectKey === (projectKey || null)) {
       return raw.data;
     }
     return null; // fingerprint mismatch — stale
@@ -67,12 +68,12 @@ export function loadCache(stateDir, fingerprint) {
  * @param {string} fingerprint
  * @param {Object} data - The index data to cache
  */
-export function saveCache(stateDir, fingerprint, data) {
+export function saveCache(stateDir, fingerprint, data, projectKey = null) {
   const cachePath = join(stateDir, CACHE_FILE);
   try {
     writeFileSync(
       cachePath,
-      JSON.stringify({ fingerprint, timestamp: Date.now(), data }),
+      JSON.stringify({ fingerprint, projectKey, timestamp: Date.now(), data }),
       "utf-8"
     );
   } catch (err) {

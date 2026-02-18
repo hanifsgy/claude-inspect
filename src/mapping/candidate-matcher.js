@@ -52,10 +52,11 @@ export function buildSourceIndexes(projectDir) {
 
   const fileList = [...swiftFiles];
   const fingerprint = computeFingerprint(fileList);
+  const projectKey = projectDir;
 
   // Try loading from cache
   const stateDir = _stateDir || join(dirname(projectDir), "state");
-  const cached = loadCache(stateDir, fingerprint);
+  const cached = loadCache(stateDir, fingerprint, projectKey);
 
   if (cached) {
     console.error(`[cache] Source indexes loaded from cache (${fileList.length} files unchanged)`);
@@ -80,7 +81,7 @@ export function buildSourceIndexes(projectDir) {
     classIndex: serializeMap(classIndex),
     identifierIndex: serializeMap(identifierIndex),
     labelIndex: serializeMap(labelIndex),
-  });
+  }, projectKey);
 
   return { moduleIndex, classIndex, identifierIndex, labelIndex, projectDir };
 }

@@ -116,6 +116,8 @@ By default this writes `<project>/.claude/identifier-registry.json`.
 npm run scan -- /absolute/path/to/your/app --validate
 ```
 
+`scan` now auto-generates `<project>/.claude/identifier-registry.json` if it is missing.
+
 3) Generate local quality report artifacts:
 
 ```bash

@@ -15,7 +15,7 @@ import {
   summarizeIndexes,
   matchAll,
   loadOverrides,
-  loadIdentifierRegistry,
+  ensureIdentifierRegistry,
   applyIdentifierRegistry,
   setStateDir,
   computeMetrics,
@@ -80,7 +80,7 @@ let enriched = matchAll(flat, resolvedProjectPath, overrides, {
   indexes,
 });
 
-const registryMatch = loadIdentifierRegistry(toolRoot, resolvedProjectPath);
+const registryMatch = ensureIdentifierRegistry(toolRoot, resolvedProjectPath, indexes);
 let registryStats = null;
 if (registryMatch) {
   const applied = applyIdentifierRegistry(enriched, registryMatch.registry);

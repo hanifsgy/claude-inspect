@@ -7,7 +7,7 @@ import {
   summarizeIndexes,
   matchAll,
   loadOverrides,
-  loadIdentifierRegistry,
+  ensureIdentifierRegistry,
   applyIdentifierRegistry,
   setStateDir,
   computeMetrics,
@@ -101,7 +101,7 @@ server.tool(
         modulePriority,
         indexes,
       });
-      const registryMatch = loadIdentifierRegistry(toolRoot, resolvedProjectPath);
+      const registryMatch = ensureIdentifierRegistry(toolRoot, resolvedProjectPath, indexes);
       let identifierRegistry = null;
       if (registryMatch) {
         const applied = applyIdentifierRegistry(enriched, registryMatch.registry);

@@ -150,11 +150,8 @@ function tryXcodeGen(projectDir, index) {
 
   for (const target of targets) {
     const sources = [];
-    for (const srcDir of target.sourceDirs) {
-      const absDir = join(projectDir, srcDir);
-      if (existsSync(absDir)) {
-        collectSwiftFiles(absDir, projectDir, sources);
-      }
+    for (const sourcePath of target.sourceDirs) {
+      collectXcodeGenSourcePath(projectDir, sourcePath, sources);
     }
     index.addModule(target.name, sources, target.dependencies, target.type);
   }
@@ -231,7 +228,8 @@ function parseXcodeGenTargets(yaml) {
     if (inSources) {
       const srcItem = line.match(/^\s+-\s*(?:path:\s*)?(.+)/);
       if (srcItem) {
-        currentTarget.sourceDirs.push(srcItem[1].trim());
+        const normalizedPath = normalizeSourcePath(srcItem[1]);
+        if (normalizedPath) currentTarget.sourceDirs.push(normalizedPath);
         continue;
       }
       if (/^\s+\w+:/.test(line)) inSources = false;
@@ -254,6 +252,56 @@ function parseXcodeGenTargets(yaml) {
   }
 
   return targets;
+}
+
+function collectXcodeGenSourcePath(projectDir, sourcePath, sources) {
+  if (!sourcePath) return;
+
+  const normalized = normalizeSourcePath(sourcePath);
+  if (!normalized) return;
+
+  const wildcardIdx = normalized.search(/[\*\{\[]/);
+  const basePath = wildcardIdx >= 0 ? normalized.slice(0, wildcardIdx) : normalized;
+  const trimmedBase = basePath.replace(/^\/+|\/+$/g, "");
+  const absBase = join(projectDir, trimmedBase || ".");
+
+  if (existsSync(absBase)) {
+    const stat = statSync(absBase);
+    if (stat.isDirectory()) {
+      collectSwiftFiles(absBase, projectDir, sources);
+      return;
+    }
+    if (stat.isFile() && extname(absBase) === ".swift") {
+      sources.push(relative(projectDir, absBase));
+      return;
+    }
+  }
+
+  // Last-resort fallback for non-standard globs: walk project and filter by prefix/suffix.
+  if (normalized.includes("*")) {
+    const all = [];
+    collectSwiftFiles(projectDir, projectDir, all);
+    const globRegex = new RegExp(
+      "^" + normalizeGlobPattern(normalized).replace(/\*/g, ".*") + "$"
+    );
+    for (const file of all) {
+      if (globRegex.test(file)) sources.push(file);
+    }
+  }
+}
+
+function normalizeSourcePath(value) {
+  if (!value) return "";
+  return value
+    .trim()
+    .replace(/^path:\s*/, "")
+    .replace(/^['\"]|['\"]$/g, "")
+    .replace(/#.*$/, "")
+    .trim();
+}
+
+function normalizeGlobPattern(value) {
+  return value.replace(/[.+^${}()|[\]\\]/g, "\\$&");
 }
 
 // ---------------------------------------------------------------------------
