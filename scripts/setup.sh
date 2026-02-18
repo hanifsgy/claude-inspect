@@ -242,11 +242,45 @@ if [ -f "$SETTINGS_FILE" ]; then
             if (!f.permissions.allow.includes(p)) f.permissions.allow.push(p);
         }
 
-        const hookEntry = { command: '$HOOK_CMD' };
         if (!f.hooks) f.hooks = {};
-        if (!f.hooks.UserPromptSubmit) f.hooks.UserPromptSubmit = [];
-        const hasHook = f.hooks.UserPromptSubmit.some(h => h.command === '$HOOK_CMD');
-        if (!hasHook) f.hooks.UserPromptSubmit.push(hookEntry);
+        const currentHooks = Array.isArray(f.hooks.UserPromptSubmit) ? f.hooks.UserPromptSubmit : [];
+
+        const normalizedHooks = [];
+        for (const entry of currentHooks) {
+            if (entry && Array.isArray(entry.hooks)) {
+                normalizedHooks.push(entry);
+                continue;
+            }
+
+            if (entry && typeof entry.command === 'string') {
+                normalizedHooks.push({
+                    hooks: [
+                        {
+                            type: 'command',
+                            command: entry.command
+                        }
+                    ]
+                });
+            }
+        }
+
+        const hasHook = normalizedHooks.some(entry =>
+            Array.isArray(entry.hooks) &&
+            entry.hooks.some(h => h && h.type === 'command' && h.command === '$HOOK_CMD')
+        );
+
+        if (!hasHook) {
+            normalizedHooks.push({
+                hooks: [
+                    {
+                        type: 'command',
+                        command: '$HOOK_CMD'
+                    }
+                ]
+            });
+        }
+
+        f.hooks.UserPromptSubmit = normalizedHooks;
 
         fs.writeFileSync('$SETTINGS_FILE', JSON.stringify(f, null, 2) + '\n');
     "
@@ -269,7 +303,12 @@ else
   "hooks": {
     "UserPromptSubmit": [
       {
-        "command": "$HOOK_CMD"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOOK_CMD"
+          }
+        ]
       }
     ]
   }

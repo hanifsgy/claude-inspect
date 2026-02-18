@@ -87,7 +87,12 @@ The `cwd` field must point to the claude-inspect directory.
   "hooks": {
     "UserPromptSubmit": [
       {
-        "command": "/ABSOLUTE/PATH/TO/claude-inspect/hooks/user-prompt-submit.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/ABSOLUTE/PATH/TO/claude-inspect/hooks/user-prompt-submit.sh"
+          }
+        ]
       }
     ]
   }
