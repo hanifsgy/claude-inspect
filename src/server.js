@@ -19,7 +19,7 @@ import {
   persistRuntimeOverrides,
 } from "./mapping/index.js";
 import { OverlayBridge } from "./overlay-bridge.js";
-import { saveHierarchy, loadHierarchy, saveSelection, getSelection } from "./store.js";
+import { saveHierarchy, loadHierarchy, saveSelection, getSelection, saveFeedback, loadAllFeedback, getFeedbackStats, clearFeedback } from "./store.js";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 
@@ -884,6 +884,89 @@ server.tool(
 
     for (const o of overrides) {
       lines.push(`- \`${o.pattern}\` → ${o.file}${o.line ? `:${o.line}` : ""}`);
+    }
+
+    return {
+      content: [{ type: "text", text: lines.join("\n") }],
+    };
+  }
+);
+
+// --- Tool: rate_mapping ---
+server.tool(
+  "rate_mapping",
+  "Rate a component's mapping as correct or incorrect. This feedback is stored and can be used to improve mapping confidence weights over time.",
+  {
+    componentId: z.string().describe("Component ID that was mapped"),
+    correct: z.boolean().describe("true if mapping is correct, false if incorrect"),
+    notes: z.string().optional().describe("Optional notes about why the mapping was correct/incorrect"),
+  },
+  async ({ componentId, correct, notes }) => {
+    const hierarchy = currentHierarchy || loadHierarchy();
+
+    const entry = {
+      componentId,
+      correct,
+      notes: notes || null,
+      timestamp: Date.now(),
+    };
+
+    if (hierarchy) {
+      const node = hierarchy.enriched.find((n) => n.id === componentId);
+      if (node) {
+        entry.file = node.file;
+        entry.fileLine = node.fileLine;
+        entry.confidence = node.confidence;
+        entry.signals = (node.evidence || []).map((e) => e.signal);
+        entry.ambiguous = node.ambiguous || false;
+      }
+    }
+
+    saveFeedback(entry);
+
+    const stats = getFeedbackStats();
+    const lines = [
+      `## Feedback Recorded`,
+      ``,
+      `**Component:** ${componentId}`,
+      `**Rating:** ${correct ? "✓ Correct" : "✗ Incorrect"}`,
+      `**Total feedback:** ${stats.total} (${stats.correct} correct, ${stats.incorrect} incorrect)`,
+    ];
+
+    if (notes) {
+      lines.push(`**Notes:** ${notes}`);
+    }
+
+    return {
+      content: [{ type: "text", text: lines.join("\n") }],
+    };
+  }
+);
+
+// --- Tool: feedback_stats ---
+server.tool(
+  "feedback_stats",
+  "Show statistics about mapping feedback collected so far. Useful for understanding which signal types are most reliable.",
+  {},
+  async () => {
+    const stats = getFeedbackStats();
+
+    const lines = [
+      `## Mapping Feedback Statistics`,
+      ``,
+      `**Total ratings:** ${stats.total}`,
+      `**Correct:** ${stats.correct}`,
+      `**Incorrect:** ${stats.incorrect}`,
+      `**Accuracy:** ${stats.total > 0 ? ((stats.correct / stats.total) * 100).toFixed(1) : 0}%`,
+    ];
+
+    if (Object.keys(stats.bySignal).length > 0) {
+      lines.push(``, `**By signal type:**`);
+      for (const [signal, data] of Object.entries(stats.bySignal).sort((a, b) => b[1].correct - a[1].correct)) {
+        const total = data.correct + data.incorrect;
+        const acc = total > 0 ? ((data.correct / total) * 100).toFixed(0) : 0;
+        lines.push(`- ${signal}: ${data.correct}/${total} (${acc}%)`);
+      }
     }
 
     return {

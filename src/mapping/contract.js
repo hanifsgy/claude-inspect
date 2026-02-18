@@ -177,16 +177,79 @@ export function computeConfidence(evidence) {
  */
 
 /**
+ * Compute ambiguity score considering multiple factors:
+ * - Confidence gap between top candidates
+ * - Number of competitive candidates
+ * - Signal quality distribution
+ *
+ * @param {Candidate[]} sorted - Candidates sorted by confidence descending
+ * @returns {{ ambiguous: boolean, ambiguityScore: number, reason: string }}
+ */
+export function computeAmbiguity(sorted) {
+  if (!sorted || sorted.length < 2) {
+    return { ambiguous: false, ambiguityScore: 0, reason: "Single or no candidate" };
+  }
+
+  const best = sorted[0];
+  const runnerUp = sorted[1];
+  const gap = best.confidence - runnerUp.confidence;
+
+  // Count competitive candidates (within 0.25 of best)
+  const competitiveCount = sorted.filter(c => best.confidence - c.confidence < 0.25).length;
+
+  // Check signal quality - manual override or identifier_exact should reduce ambiguity
+  const hasStrongSignal = best.evidence?.some(e =>
+    e.signal === SIGNAL_TYPES.MANUAL_OVERRIDE ||
+    e.signal === SIGNAL_TYPES.IDENTIFIER_EXACT
+  );
+
+  // Check if best has unique strong signal that runner-up lacks
+  const bestSignals = new Set(best.evidence?.map(e => e.signal) || []);
+  const runnerUpSignals = new Set(runnerUp.evidence?.map(e => e.signal) || []);
+  const uniqueStrongSignals = [...bestSignals].filter(s =>
+    !runnerUpSignals.has(s) &&
+    (SIGNAL_WEIGHTS[s] || 0) >= 0.7
+  ).length;
+
+  // Dynamic threshold based on factors
+  let threshold = 0.15;
+  let reason = "";
+
+  // Tighten threshold if many competitive candidates
+  if (competitiveCount > 3) {
+    threshold = 0.20;
+    reason = `Many competitive candidates (${competitiveCount})`;
+  }
+
+  // Loosen threshold if best has unique strong signal
+  if (uniqueStrongSignals > 0) {
+    threshold = 0.10;
+    reason = reason || `Best has unique strong signal`;
+  }
+
+  // Never ambiguous if manual override
+  if (hasStrongSignal && best.evidence?.some(e => e.signal === SIGNAL_TYPES.MANUAL_OVERRIDE)) {
+    return { ambiguous: false, ambiguityScore: 0, reason: "Manual override" };
+  }
+
+  const ambiguous = gap < threshold;
+  const ambiguityScore = ambiguous ? (1 - gap) * (competitiveCount / 2) : 0;
+
+  if (ambiguous && !reason) {
+    reason = `Gap ${gap.toFixed(3)} < threshold ${threshold.toFixed(2)}`;
+  }
+
+  return { ambiguous, ambiguityScore, reason: reason || "Clear winner" };
+}
+
+/**
  * Create an enriched node from an AX node and its best candidate.
  */
 export function createEnrichedNode(axNode, candidates) {
   const sorted = [...candidates].sort((a, b) => b.confidence - a.confidence);
   const best = sorted[0] || null;
-  const runnerUp = sorted[1] || null;
 
-  // Ambiguous if top two candidates are within 0.15 of each other
-  const ambiguous =
-    best && runnerUp ? Math.abs(best.confidence - runnerUp.confidence) < 0.15 : false;
+  const { ambiguous, ambiguityScore, reason } = computeAmbiguity(sorted);
 
   return {
     // AX fields (pass through)
@@ -212,6 +275,8 @@ export function createEnrichedNode(axNode, candidates) {
       ? "manual"
       : "auto",
     ambiguous,
+    ambiguityScore,
+    ambiguityReason: reason,
     candidates: sorted.slice(0, 5), // Keep top 5 for diagnostics
 
     // Legacy fields
