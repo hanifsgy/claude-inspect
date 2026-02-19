@@ -120,6 +120,7 @@ class OverlayView: NSView {
 
     private func rebuildLayers() {
         guard !isBatchUpdating else { return }
+        guard self.layer != nil else { return }
         
         computeAllTransforms()
         
@@ -130,6 +131,8 @@ class OverlayView: NSView {
             }
         }
         componentLayers = componentLayers.filter { currentIds.contains($0.key) }
+        
+        rebuildSpatialGrid()
 
         for component in components {
             guard let rect = getCachedRect(for: component.id),
@@ -287,14 +290,37 @@ class OverlayView: NSView {
 }
 
 private class ComponentShapeLayer: CAShapeLayer {
-    let componentId: String
-    private var currentRect: NSRect
-    private var isCurrentlyHovered: Bool
-    private var isCurrentlyLocked: Bool
-    private var isCurrentlySelectMode: Bool
-    private var component: ComponentData
+    var componentId: String = ""
+    private var currentRect: NSRect = .zero
+    private var isCurrentlyHovered: Bool = false
+    private var isCurrentlyLocked: Bool = false
+    private var isCurrentlySelectMode: Bool = false
+    private var component: ComponentData?
     
-    init(component: ComponentData, rect: NSRect, isHovered: Bool, isLocked: Bool, isSelectMode: Bool) {
+    override init() {
+        super.init()
+        fillColor = nil
+        lineWidth = 1.0
+        strokeColor = NSColor(red: 0.29, green: 0.56, blue: 0.85, alpha: 0.5).cgColor
+    }
+    
+    override init(layer: Any) {
+        super.init(layer: layer)
+        guard let other = layer as? ComponentShapeLayer else { return }
+        self.componentId = other.componentId
+        self.currentRect = other.currentRect
+        self.isCurrentlyHovered = other.isCurrentlyHovered
+        self.isCurrentlyLocked = other.isCurrentlyLocked
+        self.isCurrentlySelectMode = other.isCurrentlySelectMode
+        self.component = other.component
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    convenience init(component: ComponentData, rect: NSRect, isHovered: Bool, isLocked: Bool, isSelectMode: Bool) {
+        self.init()
         self.component = component
         self.componentId = component.id
         self.currentRect = rect
@@ -302,18 +328,10 @@ private class ComponentShapeLayer: CAShapeLayer {
         self.isCurrentlyLocked = isLocked
         self.isCurrentlySelectMode = isSelectMode
         
-        super.init()
-        
-        fillColor = nil
         lineWidth = isHovered ? 2.0 : 1.0
-        strokeColor = NSColor(red: 0.29, green: 0.56, blue: 0.85, alpha: 0.5).cgColor
         
         updatePath(rect: rect)
         updateColors(isHovered: isHovered, isLocked: isLocked, isSelectMode: isSelectMode, confidence: component.confidence)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
     
     func update(rect: NSRect, component: ComponentData, isHovered: Bool, isLocked: Bool, isSelectMode: Bool) {
@@ -339,21 +357,27 @@ private class ComponentShapeLayer: CAShapeLayer {
         guard isHovered != isCurrentlyHovered || isSelectMode != isCurrentlySelectMode else { return }
         isCurrentlyHovered = isHovered
         isCurrentlySelectMode = isSelectMode
-        updateColors(isHovered: isHovered, isLocked: isCurrentlyLocked, isSelectMode: isSelectMode, confidence: component.confidence)
+        if let comp = component {
+            updateColors(isHovered: isHovered, isLocked: isCurrentlyLocked, isSelectMode: isSelectMode, confidence: comp.confidence)
+        }
         lineWidth = isHovered ? 2.0 : 1.0
     }
     
     func updateLocked(isLocked: Bool) {
         guard isLocked != isCurrentlyLocked else { return }
         isCurrentlyLocked = isLocked
-        updateColors(isHovered: isCurrentlyHovered, isLocked: isLocked, isSelectMode: isCurrentlySelectMode, confidence: component.confidence)
+        if let comp = component {
+            updateColors(isHovered: isCurrentlyHovered, isLocked: isLocked, isSelectMode: isCurrentlySelectMode, confidence: comp.confidence)
+        }
         lineWidth = isLocked ? 2.5 : (isCurrentlyHovered ? 2.0 : 1.0)
     }
     
     func updateColor(isSelectMode: Bool) {
         guard isCurrentlySelectMode != isSelectMode else { return }
         isCurrentlySelectMode = isSelectMode
-        updateColors(isHovered: isCurrentlyHovered, isLocked: isCurrentlyLocked, isSelectMode: isSelectMode, confidence: component.confidence)
+        if let comp = component {
+            updateColors(isHovered: isCurrentlyHovered, isLocked: isCurrentlyLocked, isSelectMode: isSelectMode, confidence: comp.confidence)
+        }
     }
     
     private func updatePath(rect: NSRect) {
