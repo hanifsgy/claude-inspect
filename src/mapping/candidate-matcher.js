@@ -363,8 +363,18 @@ function buildIdentifierIndex(swiftFiles, projectDir) {
   // 1. .accessibilityIdentifier = "foo.bar"
   // 2. accessibilityIdentifier = "foo.bar"
   // 3. .accessibilityIdentifier("foo.bar")  (SwiftUI modifier)
+  // 4. .id("foo.bar")  (SwiftUI view identity modifier)
   const idRegex =
     /\.?accessibilityIdentifier\s*[=(]\s*"([^"]+)"/g;
+
+  // SwiftUI .id() modifier — captures .id("literal")
+  const swiftUIIdRegex = /\.id\(\s*"([^"]+)"\s*\)/g;
+
+  // SwiftUI .accessibilityRepresentation { } - captures identifiers in the closure
+  const accessibilityRepRegex = /\.accessibilityRepresentation\s*\{[^}]*\.id\s*\(\s*"([^"]+)"\s*\)/g;
+
+  // NSLocalizedString pattern - captures the key
+  const nsLocalizedRegex = /NSLocalizedString\s*\(\s*"([^"]+)"/g;
 
   // Also capture dynamic patterns like "command.library.card.\(index)"
   const dynamicIdRegex =
@@ -406,15 +416,107 @@ function buildIdentifierIndex(swiftFiles, projectDir) {
         // For patterns, also store a normalized prefix for prefix matching
         if (isPattern) {
           // "command.library.card.\(index)" → prefix "command.library.card."
-          const prefix = literal.split("\\(")[0];
-          const prefixEntries = index.get(`prefix:${prefix}`) || [];
+          const rawPrefix = literal.split("\\(")[0];
+          
+          // Store the raw prefix
+          const prefixEntries = index.get(`prefix:${rawPrefix}`) || [];
           prefixEntries.push(entry);
-          index.set(`prefix:${prefix}`, prefixEntries);
+          index.set(`prefix:${rawPrefix}`, prefixEntries);
+          
+          // Also store shorter prefixes for better matching
+          // "command.library.card.\(index)" → also try "command.library." and "command."
+          const parts = rawPrefix.split(".");
+          for (let j = parts.length - 1; j >= 2; j--) {
+            const shorterPrefix = parts.slice(0, j).join(".") + ".";
+            const shorterEntries = index.get(`prefix:${shorterPrefix}`) || [];
+            if (!shorterEntries.some(e => e.file === relFile && e.line === i + 1)) {
+              shorterEntries.push(entry);
+              index.set(`prefix:${shorterPrefix}`, shorterEntries);
+            }
+          }
+          
+          // Store common suffix patterns
+          const suffixPatterns = [".0", ".1", ".2", ".first", ".last", ".row", ".item"];
+          for (const suffix of suffixPatterns) {
+            const patternKey = `pattern:${rawPrefix}${suffix}`;
+            const patternEntries = index.get(patternKey) || [];
+            if (!patternEntries.some(e => e.file === relFile && e.line === i + 1)) {
+              patternEntries.push({ ...entry, expectedSuffix: suffix });
+              index.set(patternKey, patternEntries);
+            }
+          }
         }
 
         const list = index.get(literal) || [];
         list.push(entry);
         index.set(literal, list);
+      }
+
+      // SwiftUI .id("literal") modifier
+      swiftUIIdRegex.lastIndex = 0;
+      while ((match = swiftUIIdRegex.exec(text)) !== null) {
+        const literal = match[1];
+        // Skip if already captured by accessibilityIdentifier regex
+        if (index.has(literal)) {
+          const existing = index.get(literal);
+          if (existing.some((e) => e.file === relFile && e.line === i + 1)) continue;
+        }
+        const ownerType = findOwnerAtLine(ownerStack, i + 1);
+        const entry = {
+          literal,
+          file: relFile,
+          line: i + 1,
+          context: text.trim(),
+          ownerType,
+          matchType: "exact",
+        };
+        const list = index.get(literal) || [];
+        list.push(entry);
+        index.set(literal, list);
+      }
+
+      // SwiftUI .accessibilityRepresentation { .id("literal") }
+      accessibilityRepRegex.lastIndex = 0;
+      while ((match = accessibilityRepRegex.exec(text)) !== null) {
+        const literal = match[1];
+        if (index.has(literal)) {
+          const existing = index.get(literal);
+          if (existing.some((e) => e.file === relFile && e.line === i + 1)) continue;
+        }
+        const ownerType = findOwnerAtLine(ownerStack, i + 1);
+        const entry = {
+          literal,
+          file: relFile,
+          line: i + 1,
+          context: text.trim(),
+          ownerType,
+          matchType: "exact",
+          source: "accessibilityRepresentation",
+        };
+        const list = index.get(literal) || [];
+        list.push(entry);
+        index.set(literal, list);
+      }
+
+      // NSLocalizedString("key", comment: "...") - index the key
+      nsLocalizedRegex.lastIndex = 0;
+      while ((match = nsLocalizedRegex.exec(text)) !== null) {
+        const key = match[1];
+        const ownerType = findOwnerAtLine(ownerStack, i + 1);
+        const entry = {
+          literal: key,
+          file: relFile,
+          line: i + 1,
+          context: text.trim(),
+          ownerType,
+          matchType: "localized",
+          source: "NSLocalizedString",
+        };
+        // Store with prefix for matching localized labels
+        const localizedKey = `localized:${key}`;
+        const list = index.get(localizedKey) || [];
+        list.push(entry);
+        index.set(localizedKey, list);
       }
     }
   }
@@ -631,8 +733,29 @@ export function matchNode(axNode, indexes) {
             )
           );
         }
-        break; // Use the longest matching prefix
       }
+      
+      // Also try specific pattern matching for common suffixes
+      const lastPart = parts[parts.length - 1];
+      const specificPattern = identifierIndex.get(`pattern:${prefix}${lastPart}`);
+      if (specificPattern) {
+        for (const entry of specificPattern) {
+          addEvidence(
+            entry.file,
+            entry.line,
+            entry.ownerType,
+            createEvidence(
+              SIGNAL_TYPES.IDENTIFIER_PREFIX,
+              entry.file,
+              entry.line,
+              `Pattern "${entry.literal}" matches identifier with suffix "${lastPart}"`
+            )
+          );
+        }
+        break;
+      }
+      
+      if (patterns) break; // Use the longest matching prefix
     }
   }
 
@@ -650,6 +773,25 @@ export function matchNode(axNode, indexes) {
             entry.file,
             entry.line,
             `Label "${axNode.label}" found in source`
+          )
+        );
+      }
+    }
+
+    // Also check localized strings
+    const localizedKey = `localized:${axNode.label}`;
+    const localizedHits = identifierIndex.get(localizedKey);
+    if (localizedHits) {
+      for (const entry of localizedHits) {
+        addEvidence(
+          entry.file,
+          entry.line,
+          entry.ownerType,
+          createEvidence(
+            SIGNAL_TYPES.LABEL_EXACT,
+            entry.file,
+            entry.line,
+            `Label "${axNode.label}" matches NSLocalizedString key`
           )
         );
       }
