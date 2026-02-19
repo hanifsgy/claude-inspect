@@ -50,23 +50,26 @@ func emitEvent(_ event: OutgoingEvent) {
 
 func loadOverlayData(from path: String) -> OverlayData? {
     guard let data = FileManager.default.contents(atPath: path) else {
-        NSLog("OverlayApp: Cannot read file at \(path)")
         return nil
     }
     do {
         return try JSONDecoder().decode(OverlayData.self, from: data)
     } catch {
-        NSLog("OverlayApp: Failed to decode: \(error)")
         return nil
     }
 }
 
 class FileWatcher {
     private var source: DispatchSourceFileSystemObject?
+    private var pollTimer: Timer?
     private let queue = DispatchQueue(label: "com.overlay.filewatcher", qos: .userInteractive)
     private let path: String
     private let onChange: (OverlayData) -> Void
-    private var isWatching = false
+    
+    private var lastFileSize: UInt64 = 0
+    private var lastModTime: Date?
+    private var lastContentHash: Int = 0
+    private var isProcessing = false
     
     init(path: String, onChange: @escaping (OverlayData) -> Void) {
         self.path = path
@@ -74,69 +77,78 @@ class FileWatcher {
     }
     
     func start() {
-        guard !isWatching else { return }
-        
         let descriptor = open(path, O_EVTONLY)
-        guard descriptor >= 0 else {
-            NSLog("OverlayApp: Failed to open file for watching: \(path)")
-            startPollingFallback()
+        if descriptor >= 0 {
+            source = DispatchSource.makeFileSystemObjectSource(
+                fileDescriptor: descriptor,
+                eventMask: [.write, .extend, .delete, .rename],
+                queue: queue
+            )
+            
+            source?.setEventHandler { [weak self] in
+                self?.checkAndReload()
+            }
+            
+            source?.setCancelHandler {
+                close(descriptor)
+            }
+            
+            source?.resume()
+        }
+        
+        startFastPolling()
+        
+        checkAndReload()
+    }
+    
+    private func startFastPolling() {
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.checkAndReload()
+        }
+    }
+    
+    private func checkAndReload() {
+        guard !isProcessing else { return }
+        
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: path),
+              let fileSize = attrs[.size] as? UInt64,
+              let modTime = attrs[.modificationDate] as? Date else {
             return
         }
         
-        source = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: descriptor,
-            eventMask: [.write, .extend, .attrib],
-            queue: queue
-        )
-        
-        source?.setEventHandler { [weak self] in
-            guard let self = self else { return }
-            self.handleFileChange()
-        }
-        
-        source?.setCancelHandler {
-            close(descriptor)
-        }
-        
-        source?.resume()
-        isWatching = true
-        NSLog("OverlayApp: Started file system event watcher for \(path)")
-    }
-    
-    private func handleFileChange() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            if let data = loadOverlayData(from: self.path) {
-                self.onChange(data)
-            }
-        }
-    }
-    
-    private func startPollingFallback() {
-        var lastMod: Date?
-        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] timer in
-            guard let self = self else {
-                timer.invalidate()
-                return
-            }
-            guard let attrs = try? FileManager.default.attributesOfItem(atPath: self.path),
-                  let mod = attrs[.modificationDate] as? Date else { return }
-            if lastMod != mod {
-                lastMod = mod
-                if let data = loadOverlayData(from: self.path) {
-                    DispatchQueue.main.async {
-                        self.onChange(data)
+        if fileSize != lastFileSize || lastModTime == nil || modTime != lastModTime {
+            lastFileSize = fileSize
+            lastModTime = modTime
+            
+            isProcessing = true
+            queue.async { [weak self] in
+                guard let self = self else { return }
+                
+                if let data = FileManager.default.contents(atPath: self.path) {
+                    let hash = data.hashValue
+                    if hash != self.lastContentHash {
+                        self.lastContentHash = hash
+                        
+                        if let overlayData = try? JSONDecoder().decode(OverlayData.self, from: data) {
+                            DispatchQueue.main.async {
+                                self.onChange(overlayData)
+                            }
+                        }
                     }
+                }
+                
+                DispatchQueue.main.async {
+                    self.isProcessing = false
                 }
             }
         }
-        isWatching = true
     }
     
     func stop() {
         source?.cancel()
         source = nil
-        isWatching = false
+        pollTimer?.invalidate()
+        pollTimer = nil
     }
     
     deinit {

@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { describeUI } from "./axe.js";
+import { detectGeometry } from "./geometry.js";
 import {
   buildSourceIndexes,
   summarizeIndexes,
@@ -81,16 +82,30 @@ server.tool(
           : "";
 
         bridge.start(simulatorUdid || "booted");
-        const components = existing.enriched.map((node) => ({
-          id: node.id,
-          className: node.className,
-          name: node.name,
-          frame: node.frame,
-          confidence: node.confidence,
-          file: node.file,
-          fileLine: node.fileLine,
-        }));
-        bridge.highlight(components);
+        
+        const root = existing.flat?.[0] || existing.enriched?.[0];
+        const screen = root?.frame ? { w: root.frame.w, h: root.frame.h } : { w: 402, h: 874 };
+        const geometry = detectGeometry(screen.w, screen.h);
+        const verticalOffset = 20;
+        const contentRect = geometry.contentRect ? {
+          ...geometry.contentRect,
+          y: geometry.contentRect.y + verticalOffset,
+        } : null;
+        
+        const components = existing.enriched
+          .filter((node) => node.className !== "UIApplication")
+          .map((node) => ({
+            id: node.id,
+            className: node.className,
+            name: node.name,
+            frame: node.frame,
+            confidence: node.confidence,
+            file: node.file,
+            fileLine: node.fileLine,
+            ownerType: node.ownerType,
+          }));
+        
+        bridge.highlight({ screen, contentRect, scale: geometry.scale, components });
 
         return {
           content: [
@@ -130,6 +145,7 @@ server.tool(
 
       currentHierarchy = {
         tree,
+        flat,
         enriched,
         timestamp: Date.now(),
         scanMeta: {
@@ -144,16 +160,29 @@ server.tool(
       };
       saveHierarchy(currentHierarchy);
 
-      const components = enriched.map((node) => ({
-        id: node.id,
-        className: node.className,
-        name: node.name,
-        frame: node.frame,
-        confidence: node.confidence,
-        file: node.file,
-        fileLine: node.fileLine,
-      }));
-      bridge.highlight(components);
+      const root = flat?.[0];
+      const screen = root?.frame ? { w: root.frame.w, h: root.frame.h } : { w: 402, h: 874 };
+      const geometry = detectGeometry(screen.w, screen.h);
+      const verticalOffset = 20;
+      const contentRect = geometry.contentRect ? {
+        ...geometry.contentRect,
+        y: geometry.contentRect.y + verticalOffset,
+      } : null;
+
+      const components = enriched
+        .filter((node) => node.className !== "UIApplication")
+        .map((node) => ({
+          id: node.id,
+          className: node.className,
+          name: node.name,
+          frame: node.frame,
+          confidence: node.confidence,
+          file: node.file,
+          fileLine: node.fileLine,
+          ownerType: node.ownerType,
+        }));
+      
+      bridge.highlight({ screen, contentRect, scale: geometry.scale, components });
 
       const metrics = computeMetrics(enriched);
       const scanInfo = [

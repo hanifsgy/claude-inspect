@@ -130,8 +130,14 @@ export class OverlayBridge {
     }
   }
 
-  highlight(components) {
-    writeFileSync(FRAMES_PATH, JSON.stringify(components, null, 2));
+  highlight(overlayData) {
+    const fullData = {
+      screen: overlayData.screen || { w: 402, h: 874 },
+      contentRect: overlayData.contentRect || null,
+      scale: overlayData.scale || null,
+      components: overlayData.components || overlayData,
+    };
+    writeFileSync(FRAMES_PATH, JSON.stringify(fullData));
   }
 
   waitForClick(timeoutMs = 120000) {
