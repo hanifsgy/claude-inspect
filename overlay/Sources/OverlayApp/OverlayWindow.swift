@@ -1,5 +1,7 @@
 import AppKit
 
+// MARK: - Drawing Overlay Window (transparent, ignoresMouseEvents)
+
 class OverlayWindow: NSWindow {
     let overlayView: OverlayView
     let tooltipView: TooltipView
@@ -9,12 +11,10 @@ class OverlayWindow: NSWindow {
     var isSelectMode: Bool = false {
         didSet {
             overlayView.isSelectMode = isSelectMode
+            // In select mode, capture clicks so they do not propagate to Simulator.
             ignoresMouseEvents = !isSelectMode
         }
     }
-    
-    private var lastHoverTime: CFTimeInterval = 0
-    private let hoverThrottleInterval: CFTimeInterval = 1.0 / 30.0
 
     init() {
         overlayView = OverlayView()
@@ -34,6 +34,7 @@ class OverlayWindow: NSWindow {
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         isReleasedWhenClosed = false
 
+        // Always pass through — never block the simulator
         ignoresMouseEvents = true
 
         let container = NSView()
@@ -48,8 +49,11 @@ class OverlayWindow: NSWindow {
 
         tooltipView.isHidden = true
 
+        // Global mouse monitor for hover (works with ignoresMouseEvents=true)
         startGlobalMouseMonitor()
     }
+
+    // MARK: - Global Mouse Monitor
 
     private func startGlobalMouseMonitor() {
         globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
@@ -59,13 +63,10 @@ class OverlayWindow: NSWindow {
 
     private func handleGlobalMouseMove() {
         guard isVisible else { return }
-        
-        let now = CACurrentMediaTime()
-        guard now - lastHoverTime >= hoverThrottleInterval else { return }
-        lastHoverTime = now
 
         let mouseLocation = NSEvent.mouseLocation
 
+        // Check if mouse is within our window
         guard frame.contains(mouseLocation) else {
             clearHover()
             return
@@ -111,6 +112,8 @@ class OverlayWindow: NSWindow {
         tooltipView.frame = tf
     }
 
+    // MARK: - Layout
+
     func reposition(to cgFrame: CGRect) {
         guard let screen = NSScreen.main else { return }
         let screenHeight = screen.frame.height
@@ -125,8 +128,12 @@ class OverlayWindow: NSWindow {
 
         setFrame(windowFrame, display: true)
 
+        // Overlay view covers full window
         overlayView.frame = NSRect(x: 0, y: 0, width: cgFrame.width, height: cgFrame.height)
+        overlayView.needsDisplay = true
     }
+
+    // MARK: - Save Selection
 
     func saveSelection(_ component: ComponentData) {
         guard let data = try? JSONEncoder().encode(component),
@@ -148,6 +155,8 @@ class OverlayWindow: NSWindow {
     }
 }
 
+// MARK: - Status Bar Window (always interactive, separate from overlay)
+
 class StatusBarWindow: NSWindow {
     let statusBar: StatusBarView
 
@@ -168,17 +177,20 @@ class StatusBarWindow: NSWindow {
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         isReleasedWhenClosed = false
 
+        // Always interactive — buttons must work
         ignoresMouseEvents = false
 
         statusBar.wantsLayer = true
         contentView = statusBar
     }
 
+    /// Position below the simulator window
     func reposition(simulatorFrame cgFrame: CGRect) {
         guard let screen = NSScreen.main else { return }
         let screenHeight = screen.frame.height
         let statusHeight: CGFloat = 32
 
+        // Place at the bottom of the simulator window
         let nsY = screenHeight - cgFrame.origin.y - cgFrame.height
 
         let windowFrame = NSRect(

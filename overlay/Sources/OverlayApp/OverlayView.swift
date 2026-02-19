@@ -1,73 +1,59 @@
 import AppKit
 
 class OverlayView: NSView {
-    private var componentLayers: [String: ComponentShapeLayer] = [:]
-    private var lockedLayer: ComponentShapeLayer?
-    private var hoverFillLayer: CAShapeLayer?
-    
     var components: [ComponentData] = [] {
-        didSet { rebuildLayers() }
+        didSet { needsDisplay = true }
     }
 
+    /// iOS screen size in points (from AXe root element)
     var iosScreen: ScreenSize = ScreenSize(w: 402, h: 874) {
-        didSet { rebuildLayers() }
+        didSet { needsDisplay = true }
     }
 
+    /// Detected content rect: exact iOS content area within the macOS simulator window.
+    /// If provided by geometry detection, used for precise coordinate mapping.
     var contentRect: ContentRect? {
-        didSet { rebuildLayers() }
+        didSet { needsDisplay = true }
     }
 
+    /// Render scale from geometry detection (iOS pts → macOS pts)
     var renderScale: Double? {
-        didSet { rebuildLayers() }
+        didSet { needsDisplay = true }
     }
 
     var hoveredComponent: ComponentData? {
-        didSet { updateHoverState() }
+        didSet { needsDisplay = true }
     }
 
     var isSelectMode: Bool = false {
-        didSet { updateAllLayerColors() }
+        didSet { needsDisplay = true }
     }
 
+    /// Set after a click — freezes the overlay on this component until cleared.
     var lockedComponent: ComponentData? {
-        didSet { updateLockedState() }
+        didSet { needsDisplay = true }
     }
 
     var onHover: ((ComponentData?, NSPoint) -> Void)?
     var onClick: ((ComponentData) -> Void)?
 
     override var isFlipped: Bool { true }
-    
-    private var cachedTransforms: [String: NSRect] = [:]
-    private var lastGeometryKey: String = ""
-    private var isBatchUpdating = false
 
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
-        layer?.drawsAsynchronously = true
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         wantsLayer = true
-        layer?.drawsAsynchronously = true
-    }
-    
-    func beginBatchUpdate() {
-        isBatchUpdating = true
-    }
-    
-    func endBatchUpdate() {
-        isBatchUpdating = false
-        rebuildLayers()
     }
 
-    private func geometryKey() -> String {
-        let cr = contentRect.map { "\($0.x),\($0.y),\($0.w),\($0.h)" } ?? "nil"
-        return "\(iosScreen.w),\(iosScreen.h)|\(cr)|\(renderScale ?? 0)|\(bounds.width),\(bounds.height)"
-    }
+    // MARK: - Dynamic Coordinate Mapping
 
+    /// Convert iOS point coordinates to overlay view coordinates.
+    /// Uses detected contentRect from geometry.js when available,
+    /// otherwise falls back to heuristic calculation.
     func iosToOverlay(_ iosRect: FrameData) -> NSRect {
         guard iosScreen.w > 0, iosScreen.h > 0 else { return .zero }
 
@@ -76,10 +62,14 @@ class OverlayView: NSView {
         let scale: CGFloat
 
         if let cr = contentRect {
+            // Precise mode: use detected content rect from geometry.js
+            // contentRect tells us exactly where iOS content renders within the window
             scale = CGFloat(cr.w) / CGFloat(iosScreen.w)
             offsetX = CGFloat(cr.x)
+            // contentRect.y is in macOS CG coordinates (top-down), which matches our flipped view
             offsetY = CGFloat(cr.y)
         } else {
+            // Fallback: estimate from window bounds
             let macTitleBar: CGFloat = 28
             let contentHeight = bounds.height - macTitleBar
             let contentWidth = bounds.width
@@ -104,162 +94,92 @@ class OverlayView: NSView {
         )
     }
 
-    private func computeAllTransforms() {
-        let key = geometryKey()
-        guard key != lastGeometryKey else { return }
-        lastGeometryKey = key
-        cachedTransforms.removeAll(keepingCapacity: true)
-        for comp in components {
-            cachedTransforms[comp.id] = iosToOverlay(comp.frame)
-        }
-    }
+    // MARK: - Drawing
 
-    private func getCachedRect(for id: String) -> NSRect? {
-        return cachedTransforms[id]
-    }
-
-    private func rebuildLayers() {
-        guard !isBatchUpdating else { return }
-        guard self.layer != nil else { return }
-        
-        computeAllTransforms()
-        
-        let currentIds = Set(components.map { $0.id })
-        for (id, layer) in componentLayers {
-            if !currentIds.contains(id) {
-                layer.removeFromSuperlayer()
-            }
-        }
-        componentLayers = componentLayers.filter { currentIds.contains($0.key) }
-        
-        rebuildSpatialGrid()
-
-        for component in components {
-            guard let rect = getCachedRect(for: component.id),
-                  rect.width > 0, rect.height > 0 else { continue }
-            
-            let isHovered = hoveredComponent?.id == component.id
-            let isLocked = lockedComponent?.id == component.id
-            
-            if let existing = componentLayers[component.id] {
-                existing.update(rect: rect, component: component, isHovered: isHovered, isLocked: isLocked, isSelectMode: isSelectMode)
-            } else {
-                let layer = ComponentShapeLayer(component: component, rect: rect, isHovered: isHovered, isLocked: isLocked, isSelectMode: isSelectMode)
-                self.layer?.addSublayer(layer)
-                componentLayers[component.id] = layer
-            }
-        }
-        
-        if let locked = lockedComponent, let layer = componentLayers[locked.id] {
-            layer.zPosition = 1000
-        }
-    }
-
-    private func updateHoverState() {
-        guard lockedComponent == nil else { return }
-        
-        for (id, layer) in componentLayers {
-            let isHovered = hoveredComponent?.id == id
-            layer.updateHover(isHovered: isHovered, isSelectMode: isSelectMode)
-        }
-    }
-
-    private func updateLockedState() {
-        for (id, layer) in componentLayers {
-            let isLocked = lockedComponent?.id == id
-            layer.updateLocked(isLocked: isLocked)
-            layer.zPosition = isLocked ? 1000 : 0
-        }
-    }
-
-    private func updateAllLayerColors() {
-        for layer in componentLayers.values {
-            layer.updateColor(isSelectMode: isSelectMode)
-        }
-    }
-
+    /// Get color based on confidence level
     func colorForConfidence(_ confidence: Double?, isHovered: Bool) -> NSColor {
         guard let conf = confidence else {
-            return isHovered
+            // No confidence data - use default blue
+            return isHovered 
                 ? NSColor(red: 0.40, green: 0.70, blue: 1.0, alpha: 1.0)
                 : NSColor(red: 0.29, green: 0.56, blue: 0.85, alpha: 0.5)
         }
-
+        
         if conf >= 0.7 {
+            // High confidence - green
             return isHovered
                 ? NSColor(red: 0.20, green: 0.85, blue: 0.40, alpha: 1.0)
                 : NSColor(red: 0.20, green: 0.75, blue: 0.35, alpha: 0.6)
         } else if conf >= 0.4 {
+            // Medium confidence - yellow/orange
             return isHovered
                 ? NSColor(red: 1.0, green: 0.80, blue: 0.20, alpha: 1.0)
                 : NSColor(red: 0.95, green: 0.70, blue: 0.15, alpha: 0.5)
         } else {
+            // Low confidence - red
             return isHovered
                 ? NSColor(red: 1.0, green: 0.35, blue: 0.35, alpha: 1.0)
                 : NSColor(red: 0.90, green: 0.30, blue: 0.30, alpha: 0.5)
         }
     }
 
-    private var spatialGrid: [[ComponentData]] = []
-    private var gridCols = 0
-    private var gridRows = 0
-    private let gridSize: CGFloat = 50
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
 
-    private func rebuildSpatialGrid() {
-        guard bounds.width > 0, bounds.height > 0 else { return }
-        
-        gridCols = max(1, Int(ceil(bounds.width / gridSize)))
-        gridRows = max(1, Int(ceil(bounds.height / gridSize)))
-        spatialGrid = Array(repeating: [], count: gridCols * gridRows)
-        
+        let isLocked = lockedComponent != nil
+
+        let hoverFill: NSColor
+
+        if isLocked {
+            hoverFill = .clear
+        } else if isSelectMode {
+            hoverFill = NSColor(red: 1.0,  green: 0.75, blue: 0.20, alpha: 0.10)
+        } else {
+            hoverFill = NSColor(red: 0.40, green: 0.70, blue: 1.0,  alpha: 0.08)
+        }
+
         for component in components {
-            guard let rect = getCachedRect(for: component.id) else { continue }
+            guard component.id != lockedComponent?.id else { continue } // drawn last
+            let rect = iosToOverlay(component.frame)
+            guard rect.width > 0, rect.height > 0 else { continue }
+
+            let isHovered = !isLocked && hoveredComponent?.id == component.id
+            let strokeColor = colorForConfidence(component.confidence, isHovered: isHovered)
+
+            if isHovered {
+                hoverFill.setFill()
+                NSBezierPath(rect: rect).fill()
+            }
             
-            let minCol = max(0, Int(rect.minX / gridSize))
-            let maxCol = min(gridCols - 1, Int(rect.maxX / gridSize))
-            let minRow = max(0, Int(rect.minY / gridSize))
-            let maxRow = min(gridRows - 1, Int(rect.maxY / gridSize))
-            
-            for row in minRow...maxRow {
-                for col in minCol...maxCol {
-                    let idx = row * gridCols + col
-                    spatialGrid[idx].append(component)
-                }
+            strokeColor.setStroke()
+            let path = NSBezierPath(rect: rect)
+            path.lineWidth = isHovered ? 2.0 : 1.0
+            path.stroke()
+        }
+
+        // Draw locked component on top — green glow
+        if let locked = lockedComponent {
+            let rect = iosToOverlay(locked.frame)
+            if rect.width > 0, rect.height > 0 {
+                NSColor(red: 0.20, green: 0.80, blue: 0.35, alpha: 0.12).setFill()
+                NSBezierPath(rect: rect).fill()
+                let path = NSBezierPath(rect: rect)
+                path.lineWidth = 2.5
+                NSColor(red: 0.20, green: 0.80, blue: 0.35, alpha: 1.0).setStroke()
+                path.stroke()
             }
         }
     }
 
+    // MARK: - Hit Testing
+
+    /// Find the smallest component under a given point (in overlay view coordinates)
     func componentHitTest(overlayPoint: NSPoint) -> ComponentData? {
-        guard gridCols > 0, gridRows > 0 else {
-            return linearHitTest(overlayPoint: overlayPoint)
-        }
-        
-        let col = min(gridCols - 1, max(0, Int(overlayPoint.x / gridSize)))
-        let row = min(gridRows - 1, max(0, Int(overlayPoint.y / gridSize)))
-        let idx = row * gridCols + col
-        
-        var best: ComponentData?
-        var bestArea = Double.infinity
-
-        for component in spatialGrid[idx] {
-            guard let rect = getCachedRect(for: component.id) else { continue }
-            if rect.contains(overlayPoint) {
-                let area = Double(rect.width * rect.height)
-                if area < bestArea {
-                    bestArea = area
-                    best = component
-                }
-            }
-        }
-        return best
-    }
-    
-    private func linearHitTest(overlayPoint: NSPoint) -> ComponentData? {
         var best: ComponentData?
         var bestArea = Double.infinity
 
         for component in components {
-            guard let rect = getCachedRect(for: component.id) else { continue }
+            let rect = iosToOverlay(component.frame)
             if rect.contains(overlayPoint) {
                 let area = Double(rect.width * rect.height)
                 if area < bestArea {
@@ -271,13 +191,16 @@ class OverlayView: NSView {
         return best
     }
 
+    /// Update hover state from a window point (called by global mouse monitor)
     func updateHover(windowPoint: NSPoint) {
-        guard lockedComponent == nil else { return }
+        guard lockedComponent == nil else { return } // frozen while locked
         let localPoint = convert(windowPoint, from: nil)
         let component = componentHitTest(overlayPoint: localPoint)
         hoveredComponent = component
         onHover?(component, localPoint)
     }
+
+    // MARK: - Mouse (selection mode only, triggered by parent window)
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { return true }
 
@@ -285,149 +208,6 @@ class OverlayView: NSView {
         let point = convert(event.locationInWindow, from: nil)
         if let comp = componentHitTest(overlayPoint: point) {
             onClick?(comp)
-        }
-    }
-}
-
-private class ComponentShapeLayer: CAShapeLayer {
-    var componentId: String = ""
-    private var currentRect: NSRect = .zero
-    private var isCurrentlyHovered: Bool = false
-    private var isCurrentlyLocked: Bool = false
-    private var isCurrentlySelectMode: Bool = false
-    private var component: ComponentData?
-    
-    override init() {
-        super.init()
-        fillColor = nil
-        lineWidth = 1.0
-        strokeColor = NSColor(red: 0.29, green: 0.56, blue: 0.85, alpha: 0.5).cgColor
-    }
-    
-    override init(layer: Any) {
-        super.init(layer: layer)
-        guard let other = layer as? ComponentShapeLayer else { return }
-        self.componentId = other.componentId
-        self.currentRect = other.currentRect
-        self.isCurrentlyHovered = other.isCurrentlyHovered
-        self.isCurrentlyLocked = other.isCurrentlyLocked
-        self.isCurrentlySelectMode = other.isCurrentlySelectMode
-        self.component = other.component
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    convenience init(component: ComponentData, rect: NSRect, isHovered: Bool, isLocked: Bool, isSelectMode: Bool) {
-        self.init()
-        self.component = component
-        self.componentId = component.id
-        self.currentRect = rect
-        self.isCurrentlyHovered = isHovered
-        self.isCurrentlyLocked = isLocked
-        self.isCurrentlySelectMode = isSelectMode
-        
-        lineWidth = isHovered ? 2.0 : 1.0
-        
-        updatePath(rect: rect)
-        updateColors(isHovered: isHovered, isLocked: isLocked, isSelectMode: isSelectMode, confidence: component.confidence)
-    }
-    
-    func update(rect: NSRect, component: ComponentData, isHovered: Bool, isLocked: Bool, isSelectMode: Bool) {
-        let rectChanged = rect != currentRect
-        let stateChanged = isHovered != isCurrentlyHovered || isLocked != isCurrentlyLocked || isSelectMode != isCurrentlySelectMode
-        
-        if rectChanged {
-            currentRect = rect
-            updatePath(rect: rect)
-        }
-        
-        if stateChanged || rectChanged {
-            isCurrentlyHovered = isHovered
-            isCurrentlyLocked = isLocked
-            isCurrentlySelectMode = isSelectMode
-            self.component = component
-            updateColors(isHovered: isHovered, isLocked: isLocked, isSelectMode: isSelectMode, confidence: component.confidence)
-            lineWidth = isHovered ? 2.0 : 1.0
-        }
-    }
-    
-    func updateHover(isHovered: Bool, isSelectMode: Bool) {
-        guard isHovered != isCurrentlyHovered || isSelectMode != isCurrentlySelectMode else { return }
-        isCurrentlyHovered = isHovered
-        isCurrentlySelectMode = isSelectMode
-        if let comp = component {
-            updateColors(isHovered: isHovered, isLocked: isCurrentlyLocked, isSelectMode: isSelectMode, confidence: comp.confidence)
-        }
-        lineWidth = isHovered ? 2.0 : 1.0
-    }
-    
-    func updateLocked(isLocked: Bool) {
-        guard isLocked != isCurrentlyLocked else { return }
-        isCurrentlyLocked = isLocked
-        if let comp = component {
-            updateColors(isHovered: isCurrentlyHovered, isLocked: isLocked, isSelectMode: isCurrentlySelectMode, confidence: comp.confidence)
-        }
-        lineWidth = isLocked ? 2.5 : (isCurrentlyHovered ? 2.0 : 1.0)
-    }
-    
-    func updateColor(isSelectMode: Bool) {
-        guard isCurrentlySelectMode != isSelectMode else { return }
-        isCurrentlySelectMode = isSelectMode
-        if let comp = component {
-            updateColors(isHovered: isCurrentlyHovered, isLocked: isCurrentlyLocked, isSelectMode: isSelectMode, confidence: comp.confidence)
-        }
-    }
-    
-    private func updatePath(rect: NSRect) {
-        let path = CGMutablePath()
-        path.addRect(CGRect(x: rect.origin.x, y: rect.origin.y, width: rect.width, height: rect.height))
-        self.path = path
-    }
-    
-    private func updateColors(isHovered: Bool, isLocked: Bool, isSelectMode: Bool, confidence: Double?) {
-        if isLocked {
-            fillColor = NSColor(red: 0.20, green: 0.80, blue: 0.35, alpha: 0.12).cgColor
-            strokeColor = NSColor(red: 0.20, green: 0.80, blue: 0.35, alpha: 1.0).cgColor
-            lineWidth = 2.5
-            return
-        }
-        
-        fillColor = nil
-        
-        if isHovered {
-            let hoverFill: NSColor
-            if isSelectMode {
-                hoverFill = NSColor(red: 1.0, green: 0.75, blue: 0.20, alpha: 0.10)
-            } else {
-                hoverFill = NSColor(red: 0.40, green: 0.70, blue: 1.0, alpha: 0.08)
-            }
-            fillColor = hoverFill.cgColor
-        }
-        
-        strokeColor = colorForConfidence(confidence, isHovered: isHovered).cgColor
-    }
-    
-    private func colorForConfidence(_ confidence: Double?, isHovered: Bool) -> NSColor {
-        guard let conf = confidence else {
-            return isHovered
-                ? NSColor(red: 0.40, green: 0.70, blue: 1.0, alpha: 1.0)
-                : NSColor(red: 0.29, green: 0.56, blue: 0.85, alpha: 0.5)
-        }
-
-        if conf >= 0.7 {
-            return isHovered
-                ? NSColor(red: 0.20, green: 0.85, blue: 0.40, alpha: 1.0)
-                : NSColor(red: 0.20, green: 0.75, blue: 0.35, alpha: 0.6)
-        } else if conf >= 0.4 {
-            return isHovered
-                ? NSColor(red: 1.0, green: 0.80, blue: 0.20, alpha: 1.0)
-                : NSColor(red: 0.95, green: 0.70, blue: 0.15, alpha: 0.5)
-        } else {
-            return isHovered
-                ? NSColor(red: 1.0, green: 0.35, blue: 0.35, alpha: 1.0)
-                : NSColor(red: 0.90, green: 0.30, blue: 0.30, alpha: 0.5)
         }
     }
 }

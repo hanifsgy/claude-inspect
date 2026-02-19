@@ -1,7 +1,7 @@
 import { spawn, execSync } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { writeFileSync, readFileSync, statSync, watch } from "fs";
+import { writeFileSync, readFileSync, statSync } from "fs";
 import { createInterface } from "readline";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -14,25 +14,33 @@ const UNLOCK_PATH = resolve(ROOT, "state", "unlock.trigger");
 export class OverlayBridge {
   constructor() {
     this.process = null;
-    this._queue = [];
-    this._waiters = [];
-    this._fsWatcher = null;
+    this._queue = [];    // selections buffered before waitForClick is called
+    this._waiters = []; // pending waitForClick Promises
+    this._bgTimer = null;
+    this._bgLastMod = 0;
     this._ownsStdoutEvents = false;
     this._lastDeliveredId = null;
     this._lastDeliveredAt = 0;
   }
 
+  /**
+   * Ensure the overlay is running. If already started (e.g. by the shell
+   * script), skips spawning. Background file watching always runs as a
+   * fallback in case stdout delivery is interrupted.
+   */
   start(udid = "booted") {
     if (this.process) {
-      this._startFileWatcher();
+      this._startBackground();
       return;
     }
 
+    // Skip spawn if OverlayApp is already running (started by shell script)
     try {
       execSync("pgrep -x OverlayApp", { stdio: "ignore" });
-      this._startFileWatcher();
+      this._startBackground();
       return;
     } catch {
+      // not running, fall through to spawn
     }
 
     this.process = spawn(OVERLAY_BIN, [FRAMES_PATH], {
@@ -44,9 +52,10 @@ export class OverlayBridge {
     this.process.on("exit", () => {
       this.process = null;
       this._ownsStdoutEvents = false;
-      this._stopFileWatcher();
+      this._stopBackground();
     });
 
+    // stdout path (bridge-owned overlay) — delivers to queue immediately
     if (this.process.stdout) {
       const rl = createInterface({ input: this.process.stdout });
       rl.on("line", (line) => {
@@ -56,62 +65,39 @@ export class OverlayBridge {
       });
     }
 
-    this._startFileWatcher();
+    this._startBackground();
   }
 
-  _startFileWatcher() {
-    if (this._fsWatcher) return;
+  /**
+   * Always-on file watcher. Runs continuously as a delivery fallback so
+   * clicks are buffered even when no waitForClick is active.
+   */
+  _startBackground() {
+    if (this._bgTimer) return;
+    try { this._bgLastMod = statSync(SELECTION_PATH).mtimeMs; } catch {}
 
-    try {
-      this._fsWatcher = watch(SELECTION_PATH, (eventType) => {
-        if (eventType === "change") {
-          this._handleFileChange();
-        }
-      });
-      this._fsWatcher.on("error", () => {
-        this._startPollingFallback();
-      });
-    } catch {
-      this._startPollingFallback();
-    }
-  }
-
-  _handleFileChange() {
-    try {
-      const data = JSON.parse(readFileSync(SELECTION_PATH, "utf-8"));
-      this._deliver(data);
-    } catch {}
-  }
-
-  _pollTimer = null;
-  _startPollingFallback() {
-    if (this._pollTimer) return;
-    let lastMod = 0;
-    try { lastMod = statSync(SELECTION_PATH).mtimeMs; } catch {}
-
-    this._pollTimer = setInterval(() => {
+    this._bgTimer = setInterval(() => {
       try {
         const { mtimeMs } = statSync(SELECTION_PATH);
-        if (mtimeMs > lastMod) {
-          lastMod = mtimeMs;
+        if (mtimeMs > this._bgLastMod) {
+          this._bgLastMod = mtimeMs;
           const data = JSON.parse(readFileSync(SELECTION_PATH, "utf-8"));
           this._deliver(data);
         }
       } catch {}
-    }, 100);
+    }, 300);
   }
 
-  _stopFileWatcher() {
-    if (this._fsWatcher) {
-      this._fsWatcher.close();
-      this._fsWatcher = null;
-    }
-    if (this._pollTimer) {
-      clearInterval(this._pollTimer);
-      this._pollTimer = null;
+  _stopBackground() {
+    if (this._bgTimer) {
+      clearInterval(this._bgTimer);
+      this._bgTimer = null;
     }
   }
 
+  /**
+   * Route a selection to the next waiter, or buffer it if no one is waiting.
+   */
   _deliver(data) {
     if (!data || !data.id) return;
     const now = Date.now();
@@ -130,17 +116,19 @@ export class OverlayBridge {
     }
   }
 
+  /**
+   * Update the frames file (overlay watches for changes).
+   */
   highlight(overlayData) {
-    const fullData = {
-      screen: overlayData.screen || { w: 402, h: 874 },
-      contentRect: overlayData.contentRect || null,
-      scale: overlayData.scale || null,
-      components: overlayData.components || overlayData,
-    };
-    writeFileSync(FRAMES_PATH, JSON.stringify(fullData));
+    writeFileSync(FRAMES_PATH, JSON.stringify(overlayData));
   }
 
+  /**
+   * Wait for the next component selection.
+   * Returns immediately if a selection was buffered since the last call.
+   */
   waitForClick(timeoutMs = 120000) {
+    // Return buffered selection immediately
     if (this._queue.length > 0) {
       const data = this._queue.shift();
       try { writeFileSync(UNLOCK_PATH, ""); } catch {}
@@ -168,7 +156,7 @@ export class OverlayBridge {
   }
 
   stop() {
-    this._stopFileWatcher();
+    this._stopBackground();
     this._waiters.forEach((w) => { w.cleanup(); w.reject(new Error("Inspector stopped")); });
     this._waiters = [];
     this._queue = [];
