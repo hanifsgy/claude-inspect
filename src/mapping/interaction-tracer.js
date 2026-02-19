@@ -1,5 +1,16 @@
 import { existsSync, readFileSync } from "fs";
-import { join } from "path";
+import { join, resolve, sep } from "path";
+
+/**
+ * Check that a file path resolves to within the project root.
+ * Prevents path-traversal attacks where an override file like
+ * "../../.ssh/id_rsa" could escape the project directory.
+ */
+function isPathWithinRoot(projectRoot, filePath) {
+  const root = resolve(projectRoot);
+  const resolved = resolve(root, filePath);
+  return resolved === root || resolved.startsWith(root + sep);
+}
 
 const INTERACTION_SIGNAL_PATTERNS = [
   {
@@ -50,6 +61,13 @@ export function traceInteraction(node, projectPath, contextLines = 24) {
     return {
       ok: false,
       error: "No mapped source file for this component.",
+    };
+  }
+
+  if (!isPathWithinRoot(projectPath, node.file)) {
+    return {
+      ok: false,
+      error: `Refusing to read file outside project root: ${node.file}`,
     };
   }
 

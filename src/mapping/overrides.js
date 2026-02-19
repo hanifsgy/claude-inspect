@@ -22,8 +22,18 @@
  */
 
 import { readFileSync, existsSync, writeFileSync } from "fs";
-import { join, resolve, dirname } from "path";
+import { join, resolve, dirname, sep } from "path";
 import { mkdirSync } from "fs";
+
+/**
+ * Return true if `filePath` resolves to within `projectRoot`.
+ * Prevents `../../etc/passwd` style traversal from override entries.
+ */
+function isPathWithinRoot(projectRoot, filePath) {
+  const root = resolve(projectRoot);
+  const resolved = resolve(root, filePath);
+  return resolved === root || resolved.startsWith(root + sep);
+}
 
 let runtimeOverrides = [];
 
@@ -113,7 +123,7 @@ export function loadOverrides(toolRoot, projectPath) {
   };
 
   for (const path of configPaths) {
-    const loaded = loadOverrideFile(path);
+    const loaded = loadOverrideFile(path, resolvedProjectPath);
     if (!loaded) continue;
 
     merged.sources.push(path);
@@ -133,7 +143,7 @@ export function loadOverrides(toolRoot, projectPath) {
   return merged;
 }
 
-function loadOverrideFile(configPath) {
+function loadOverrideFile(configPath, projectRoot = null) {
   if (!existsSync(configPath)) return null;
 
   let raw;
@@ -144,13 +154,20 @@ function loadOverrideFile(configPath) {
     return null;
   }
 
-  const overrides = (raw.overrides || []).map((entry) => ({
-    pattern: entry.pattern || "",
-    file: entry.file || null,
-    line: entry.line ?? null,
-    ownerType: entry.ownerType ?? null,
-    module: entry.module ?? null,
-  }));
+  const overrides = (raw.overrides || []).flatMap((entry) => {
+    const file = entry.file || null;
+    if (file && projectRoot && !isPathWithinRoot(projectRoot, file)) {
+      console.error(`[overrides] Skipping unsafe path in ${configPath}: "${file}"`);
+      return [];
+    }
+    return [{
+      pattern: entry.pattern || "",
+      file,
+      line: entry.line ?? null,
+      ownerType: entry.ownerType ?? null,
+      module: entry.module ?? null,
+    }];
+  });
 
   const modulePriority = Array.isArray(raw.modulePriority) ? raw.modulePriority : [];
   const criticalMappings = Array.isArray(raw.criticalMappings) ? raw.criticalMappings : [];

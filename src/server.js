@@ -20,7 +20,14 @@ import {
 } from "./mapping/index.js";
 import { OverlayBridge } from "./overlay-bridge.js";
 import { saveHierarchy, loadHierarchy, saveSelection, getSelection, saveFeedback, loadAllFeedback, getFeedbackStats, clearFeedback } from "./store.js";
-import { dirname, join, resolve } from "path";
+import { dirname, join, resolve, sep } from "path";
+
+/** Return true if filePath resolves to within projectRoot. */
+function isPathWithinRoot(projectRoot, filePath) {
+  const root = resolve(projectRoot);
+  const resolved = resolve(root, filePath);
+  return resolved === root || resolved.startsWith(root + sep);
+}
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -836,6 +843,14 @@ server.tool(
   async ({ pattern, file, line, ownerType, module, persist }) => {
     const hierarchy = currentHierarchy || loadHierarchy();
 
+    const projectPath = hierarchy?.scanMeta?.projectPath;
+    if (projectPath && !isPathWithinRoot(projectPath, file)) {
+      return {
+        content: [{ type: "text", text: `Error: file path "${file}" escapes the project root. Only paths within the project directory are allowed.` }],
+        isError: true,
+      };
+    }
+
     const entry = addRuntimeOverride({ pattern, file, line, ownerType, module });
 
     let persistedPath = null;
@@ -1016,6 +1031,12 @@ server.tool(
     const projectPath = hierarchy.scanMeta?.projectPath;
     if (!projectPath) {
       lines.push("**Status:** Cannot validate - missing project path");
+      return { content: [{ type: "text", text: lines.join("\n") }], isError: true };
+    }
+
+    if (!isPathWithinRoot(projectPath, node.file)) {
+      lines.push(`**Status:** ❌ INVALID`);
+      lines.push(`**Reason:** Mapped file path escapes project root: ${node.file}`);
       return { content: [{ type: "text", text: lines.join("\n") }], isError: true };
     }
 

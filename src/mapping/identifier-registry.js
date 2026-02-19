@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from "fs";
 import { join, dirname, resolve } from "path";
 import { SIGNAL_TYPES, createEvidence } from "./contract.js";
 
@@ -86,9 +86,64 @@ export function loadIdentifierRegistry(toolRoot, projectPath, explicitPath = nul
   return null;
 }
 
-export function ensureIdentifierRegistry(toolRoot, projectPath, indexes, explicitPath = null) {
+/**
+ * Check if an identifier registry is stale by comparing its generatedAt
+ * timestamp against source file mtimes.
+ *
+ * @param {Object} registry - The loaded registry object
+ * @param {string} projectPath - Project root path
+ * @param {Object} indexes - Source indexes with moduleIndex
+ * @returns {{stale: boolean, reason: string|null}}
+ */
+export function checkRegistryStaleness(registry, projectPath, indexes) {
+  if (!registry?.generatedAt) {
+    return { stale: true, reason: "Registry has no generatedAt timestamp" };
+  }
+
+  const registryTime = new Date(registry.generatedAt).getTime();
+  if (isNaN(registryTime)) {
+    return { stale: true, reason: "Registry has invalid generatedAt timestamp" };
+  }
+
+  const resolvedProjectPath = resolve(projectPath);
+  let newerFiles = 0;
+
+  for (const [, mod] of indexes.moduleIndex.modules) {
+    for (const src of mod.sources) {
+      try {
+        const stat = statSync(join(resolvedProjectPath, src));
+        if (stat.mtimeMs > registryTime) {
+          newerFiles++;
+        }
+      } catch {
+        // file may have been removed
+      }
+    }
+  }
+
+  if (newerFiles > 0) {
+    return { stale: true, reason: `${newerFiles} source file(s) modified after registry generation` };
+  }
+
+  return { stale: false, reason: null };
+}
+
+export function ensureIdentifierRegistry(toolRoot, projectPath, indexes, { explicitPath = null, autoRefresh = true } = {}) {
   const existing = loadIdentifierRegistry(toolRoot, projectPath, explicitPath);
-  if (existing) return existing;
+
+  if (existing) {
+    // Check staleness and auto-refresh if needed
+    if (autoRefresh) {
+      const { stale, reason } = checkRegistryStaleness(existing.registry, projectPath, indexes);
+      if (stale) {
+        console.error(`[registry] Stale identifier registry: ${reason}. Auto-refreshing...`);
+        const registry = buildIdentifierRegistry(projectPath, indexes);
+        saveIdentifierRegistry(registry, existing.path);
+        return { path: existing.path, registry, refreshed: true, refreshReason: reason };
+      }
+    }
+    return { ...existing, refreshed: false };
+  }
 
   const outputPath = explicitPath || join(resolve(projectPath), ".claude", "identifier-registry.json");
   const registry = buildIdentifierRegistry(projectPath, indexes);
@@ -97,6 +152,8 @@ export function ensureIdentifierRegistry(toolRoot, projectPath, indexes, explici
   return {
     path: outputPath,
     registry,
+    refreshed: true,
+    refreshReason: "New registry generated",
   };
 }
 
