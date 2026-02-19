@@ -376,6 +376,10 @@ function buildIdentifierIndex(swiftFiles, projectDir) {
   // NSLocalizedString pattern - captures the key
   const nsLocalizedRegex = /NSLocalizedString\s*\(\s*"([^"]+)"/g;
 
+  // Attributed string accessibility patterns
+  const attributedLabelRegex = /accessibilityLabel\s*[=:]\s*"([^"]+)"/g;
+  const attributedStringRegex = /NSAttributedString\s*\([^)]*string\s*:\s*"([^"]+)"/g;
+
   // Also capture dynamic patterns like "command.library.card.\(index)"
   const dynamicIdRegex =
     /\.?accessibilityIdentifier\s*[=(]\s*"([^"]*\\[^"]*)"/ ;
@@ -517,6 +521,47 @@ function buildIdentifierIndex(swiftFiles, projectDir) {
         const list = index.get(localizedKey) || [];
         list.push(entry);
         index.set(localizedKey, list);
+      }
+
+      // Attributed string accessibilityLabel: "label"
+      attributedLabelRegex.lastIndex = 0;
+      while ((match = attributedLabelRegex.exec(text)) !== null) {
+        const label = match[1];
+        const ownerType = findOwnerAtLine(ownerStack, i + 1);
+        const entry = {
+          literal: label,
+          file: relFile,
+          line: i + 1,
+          context: text.trim(),
+          ownerType,
+          matchType: "exact",
+          source: "attributedLabel",
+        };
+        const attrKey = `attrLabel:${label}`;
+        const attrList = index.get(attrKey) || [];
+        attrList.push(entry);
+        index.set(attrKey, attrList);
+      }
+
+      // NSAttributedString(string: "text", attributes: [...accessibilityLabel...])
+      attributedStringRegex.lastIndex = 0;
+      while ((match = attributedStringRegex.exec(text)) !== null) {
+        const text = match[1];
+        if (text.length < 3) continue; // Skip very short strings
+        const ownerType = findOwnerAtLine(ownerStack, i + 1);
+        const entry = {
+          literal: text,
+          file: relFile,
+          line: i + 1,
+          context: lines[i].trim(),
+          ownerType,
+          matchType: "exact",
+          source: "attributedString",
+        };
+        const attrTextKey = `attrText:${text}`;
+        const attrTextList = index.get(attrTextKey) || [];
+        attrTextList.push(entry);
+        index.set(attrTextKey, attrTextList);
       }
     }
   }
@@ -792,6 +837,44 @@ export function matchNode(axNode, indexes) {
             entry.file,
             entry.line,
             `Label "${axNode.label}" matches NSLocalizedString key`
+          )
+        );
+      }
+    }
+
+    // Also check attributed string labels
+    const attrLabelKey = `attrLabel:${axNode.label}`;
+    const attrLabelHits = identifierIndex.get(attrLabelKey);
+    if (attrLabelHits) {
+      for (const entry of attrLabelHits) {
+        addEvidence(
+          entry.file,
+          entry.line,
+          entry.ownerType,
+          createEvidence(
+            SIGNAL_TYPES.LABEL_EXACT,
+            entry.file,
+            entry.line,
+            `Label "${axNode.label}" matches attributed string accessibilityLabel`
+          )
+        );
+      }
+    }
+
+    // Check attributed string text content
+    const attrTextKey = `attrText:${axNode.label}`;
+    const attrTextHits = identifierIndex.get(attrTextKey);
+    if (attrTextHits) {
+      for (const entry of attrTextHits) {
+        addEvidence(
+          entry.file,
+          entry.line,
+          entry.ownerType,
+          createEvidence(
+            SIGNAL_TYPES.LABEL_FUZZY,
+            entry.file,
+            entry.line,
+            `Label matches NSAttributedString text content`
           )
         );
       }
